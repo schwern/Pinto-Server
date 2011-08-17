@@ -10,9 +10,9 @@ use Data::Dumper;
 use Path::Class;
 use File::Temp;
 
-use Pinto;
-use Pinto::Config;
-use Pinto::Logger;
+use Pinto 0.012;
+use Pinto::Config 0.012;
+use Pinto::Logger 0.012;
 
 use Dancer ':syntax';
 
