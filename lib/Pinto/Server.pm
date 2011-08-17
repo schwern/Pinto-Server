@@ -23,7 +23,8 @@ use Dancer ':syntax';
 #-----------------------------------------------------------------------------
 # These are persistent variables!
 
-my $config = Pinto::Config->new();
+my %force  = (nocommit => 0, noinit => 0, quiet => 1);
+my $config = Pinto::Config->new(%force);
 my $logger = Pinto::Logger->new(config => $config);
 my $pinto  = Pinto->new(logger => $logger, config => $config);
 
@@ -107,6 +108,8 @@ __END__
 
 You probably want to look at L<pinto-server> first.
 
+Then you'll want to look at L<pinto-remote>.
+
 L<Pinto::Server> is a web API to a L<Pinto> repository.  Using this
 interface, remote clients (like L<pinto-remote>) can add
 distributions, remove packages, and list the contents of the Pinto
@@ -139,13 +142,15 @@ required to provide an author for any C<add> or C<remove> operations.
 
 =head1 CAVEATS
 
-If you are running L<Pinto::Server> and have configured Pinto to use a
-VCS-based store, such as L<Pinto::Store::Svn> or L<Pinto::Store::Git>,
-then you must not mess with the VCS directly (at least not the VCS
-directories that Pinto is using).  This is because L<Pinto::Server>
-only initializes the working copy of the Pinto repository at startup.
-Thereafter, it assumes that it is the only actor that affects its part
-of the VCS.  If you start
+If you are running L<Pinto::Server> and have configured L<Pinto> to
+use a VCS-based store, such as L<Pinto::Store::Svn> or
+L<Pinto::Store::Git>, then you must not mess with the VCS directly (at
+least not the part of the VCS that holds the Pinto repository).  This
+is because L<Pinto::Server> only initializes the working copy of the
+repository at startup.  Thereafter, it assumes that it is the only
+actor that affects the Pinto repository in the VCS.  If you start
+modifying Pinto's part of the VCS directly, then the working copy for
+L<Pinto::Server> will become out of date and conflicts will happen.
 
 =head1 LIMITATIONS
 
