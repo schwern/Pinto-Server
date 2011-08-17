@@ -12,8 +12,12 @@ use warnings;
 
 #-----------------------------------------------------------------------------
 
-use Pinto::Server::Dispatch;
-Pinto::Server::Dispatch->as_psgi();
+use Pinto::Server;
+use Dancer::GetOpt;
+use Dancer;
+
+Dancer::GetOpt->process_args();
+Dancer::dance;
 
 #-----------------------------------------------------------------------------
 
