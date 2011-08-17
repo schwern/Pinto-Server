@@ -1,5 +1,8 @@
 {{$NEXT}}
 
+    Now requires Pinto 0.012 or newer, which runs better under
+    a server environment.
+
 0.001     2011-08-17 01:04:58 America/Los_Angeles
 
     Initial release.
