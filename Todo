@@ -1,0 +1,15 @@
+=head1 Stuff to do on Pint::Server
+
+In no particular order...
+
+=over 4
+
+=item Figure out how to integrate Pinto::Logger with the Dancer::Logger,
+so that warnings and diagnostic output can go somwhere useful.
+
+=item Perhaps write our own GetOpt, to hide the fact that we are running
+under Dancer.
+
+=back
+
+=cut
