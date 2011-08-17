@@ -22,3 +22,33 @@ Dancer::dance;
 #-----------------------------------------------------------------------------
 
 __END__
+
+=head1 SYNOPSIS
+
+First, create a config file at F<~/.pinto/config.ini>:
+
+  # Required.  This is where your repository will live
+  local = /some/directory
+
+Then start L<pinto-server> (assume the host name is 'tatooine'):
+
+   $> pinto-server
+
+Then use L<pinto-remote> to put some stuff in your repository
+
+   $> pinto-remote --host=http://tatooine:5000 add Foo-Bar.tar.gz
+
+Finally, use L<cpanm> to install stuff from your repository
+
+  $> cpanm --mirror=http://tatooine:5000 Foo::Bar
+
+=head1 DESCRIPTION
+
+L<pinto-server> is the utility program for starting the
+L<Pinto::Server>.  At the moment, L<pinto-server> is based on
+L<Dancer>, so it supports whatever command-line switches that
+L<Dancer::GetOpt> provides.  Say C<pinto-server --help> to get a
+listing of the available options.
+
+=cut
+
