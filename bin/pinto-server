@@ -6,18 +6,111 @@
 use strict;
 use warnings;
 
+use Pod::Usage;
+use Getopt::Long;
+use Path::Class;
+use File::Temp;
+use Pinto 0.017;
+
+use Dancer ':syntax';
+
 #-----------------------------------------------------------------------------
 
 # VERSION
 
 #-----------------------------------------------------------------------------
 
-use Pinto::Server;
-use Dancer::GetOpt;
-use Dancer;
 
-Dancer::GetOpt->process_args();
-Dancer::dance;
+GetOptions( 'daemon'  => sub { setting(@_) },
+            'port=i'  => sub { setting(@_) },
+            'repos=s' => \my $repos ) or pod2usage();
+
+pod2usage(-message => 'Must specify a repository') if not $repos;
+my $PINTO  = Pinto->new(repos => $repos, quiet => 1);
+
+#----------------------------------------------------------------------------
+# Dancer routes
+
+post '/action/add' => sub {
+
+    my $author = param('author')
+      or (status 500 and return 'No author supplied');
+
+    my $dist   = upload('dist')
+      or (status 500 and return 'No dist file supplied');
+
+    my $tempdir = dir( File::Temp::tempdir(CLEANUP=>1) );
+    my $dist_file = $tempdir->file( $dist->basename() );
+    $dist->copy_to( $dist_file );
+
+    $PINTO->new_action_batch();
+    $PINTO->add_action('Add', dist => $dist_file, author => $author);
+    my $result = $PINTO->run_actions();
+
+    status 200 and return if $result->is_success();
+    status 500 and return join "\n", map {"$_"} $result->exceptions();
+
+};
+
+#----------------------------------------------------------------------------
+
+post '/action/remove' => sub {
+
+    my $author  = param('author')
+      or (status 500 and return 'No author supplied');
+
+    my $package = param('package')
+      or ( status 500 and return 'No package supplied');
+
+    $PINTO->new_action_batch();
+    $PINTO->add_action('Remove', package => $package, author => $author);
+    my $result = $PINTO->run_actions();
+
+    status 200 and return if $result->is_success();
+    status 500 and return join "\n", map {"$_"} $result->exceptions();
+};
+
+#----------------------------------------------------------------------------
+
+post '/action/list' => sub {
+
+    my $buffer = '';
+    my $type = ucfirst param('type') or 'All';
+
+    $PINTO->new_action_batch();
+    $PINTO->add_action("List::$type", out => \$buffer);
+    my $result = $PINTO->run_actions();
+
+    status 200 and return $buffer if $result->is_success();
+    status 500 and return join "\n", map {"$_"} $result->exceptions();
+};
+
+#----------------------------------------------------------------------------
+
+get '/' => sub {
+    status 200;
+    return "OK";
+};
+
+#----------------------------------------------------------------------------
+
+get '/authors/**' => sub {
+     my $file =  file( $repos, request->uri() );
+     status 404 and return 'Not found' if not -e $file;
+     return send_file( $file, system_path => 1 );
+};
+
+#----------------------------------------------------------------------------
+
+get '/modules/**' => sub {
+     my $file =  file( $repos, request->uri() );
+     status 404 and return 'Not found' if not -e $file;
+     return send_file( $file, system_path => 1 );
+};
+
+#----------------------------------------------------------------------------
+
+Dancer::dance();
 
 #-----------------------------------------------------------------------------
 
@@ -25,22 +118,7 @@ __END__
 
 =head1 SYNOPSIS
 
-First, create a config file at F<~/.pinto/config.ini>:
-
-  # Required.  This is where your repository will live
-  local = /some/directory
-
-Then start L<pinto-server> (assume the host name is 'tatooine'):
-
-   $> pinto-server
-
-Then use L<pinto-remote> to put some stuff in your repository
-
-   $> pinto-remote --host=http://tatooine:5000 add Foo-Bar.tar.gz
-
-Finally, use L<cpanm> to install stuff from your repository
-
-  $> cpanm --mirror=http://tatooine:5000 Foo::Bar
+  pinto-server --repos=/path/to/repository [--daemon] [--port=N]
 
 =head1 DESCRIPTION
 
@@ -49,6 +127,31 @@ L<Pinto::Server>.  At the moment, L<pinto-server> is based on
 L<Dancer>, so it supports whatever command-line switches that
 L<Dancer::GetOpt> provides.  Say C<pinto-server --help> to get a
 listing of the available options.
+
+=head1 ARGUMENTS
+
+=over 4
+
+=item --repos=PATH
+
+The path to the Pinto repository you wish to serve.  The repository
+must already exist.
+
+=back
+
+=head1 OPTIONS
+
+=over 4
+
+=item --daemon
+
+If set, the L<pinto-server> will fork and run in a separate process.
+
+=item --port=N
+
+Sets the port number for the server to listen on.  Default is 3000.
+
+=back
 
 =cut
 
