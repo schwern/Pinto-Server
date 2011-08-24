@@ -75,7 +75,7 @@ post '/action/remove' => sub {
 post '/action/list' => sub {
 
     my $buffer = '';
-    my $type = ucfirst param('type') or 'All';
+    my $type = ucfirst param('type') || 'All';
 
     $PINTO->new_action_batch();
     $PINTO->add_action("List::$type", out => \$buffer);
