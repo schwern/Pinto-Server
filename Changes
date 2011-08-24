@@ -1,7 +1,13 @@
 {{$NEXT}}
 
-    Now requires Pinto 0.012 or newer, which runs better under
+    Now requires Pinto 0.017 or newer, which runs better under
     a server environment.
+
+    All the guts of Pinto::Server are now in pinto-server, as
+    this seemed to be the only way to integrate my Dancer
+    routes with my own command-line switches without having
+    to use Dancer's own configuration API.  I'm quite sure
+    that I'm not using Dancer the way it is intended.
 
 0.001     2011-08-17 01:04:58 America/Los_Angeles
 
