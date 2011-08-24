@@ -44,7 +44,7 @@ post '/action/add' => sub {
     my $result = $PINTO->run_actions();
 
     status 200 and return if $result->is_success();
-    status 500 and return join "\n", map {"$_"} $result->exceptions();
+    status 500 and return $result->to_string();
 
 };
 
@@ -63,7 +63,7 @@ post '/action/remove' => sub {
     my $result = $PINTO->run_actions();
 
     status 200 and return if $result->is_success();
-    status 500 and return join "\n", map {"$_"} $result->exceptions();
+    status 500 and return $result->to_string();
 };
 
 #----------------------------------------------------------------------------
@@ -78,7 +78,7 @@ post '/action/list' => sub {
     my $result = $PINTO->run_actions();
 
     status 200 and return $buffer if $result->is_success();
-    status 500 and return join "\n", map {"$_"} $result->exceptions();
+    status 500 and return $result->to_string;
 };
 
 #----------------------------------------------------------------------------
