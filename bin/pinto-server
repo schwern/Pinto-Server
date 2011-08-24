@@ -19,14 +19,10 @@ use Dancer ':syntax';
 # VERSION
 
 #-----------------------------------------------------------------------------
+# Globals
 
-
-GetOptions( 'daemon'  => sub { setting(@_) },
-            'port=i'  => sub { setting(@_) },
-            'repos=s' => \my $repos ) or pod2usage();
-
-pod2usage(-message => 'Must specify a repository') if not $repos;
-my $PINTO  = Pinto->new(repos => $repos, quiet => 1);
+my $PINTO;
+my $REPOS;
 
 #----------------------------------------------------------------------------
 # Dancer routes
@@ -87,32 +83,41 @@ post '/action/list' => sub {
 
 #----------------------------------------------------------------------------
 
+get qr{^ /(authors|modules)/(.+) }x => sub {
+     my $file =  file( $REPOS, request->uri() );
+     status 404 and return 'Not found' if not -e $file;
+     return send_file( $file, system_path => 1 );
+};
+
+#----------------------------------------------------------------------------
+# Ping route
+
 get '/' => sub {
     status 200;
-    return "OK";
+    return 'Pinto OK';
 };
 
-#----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+# Fallback route
 
-get '/authors/**' => sub {
-     my $file =  file( $repos, request->uri() );
-     status 404 and return 'Not found' if not -e $file;
-     return send_file( $file, system_path => 1 );
+any qr{ .* }x => sub {
+    status 404;
+    return 'Not found';
 };
 
-#----------------------------------------------------------------------------
+#-----------------------------------------------------------------------------
+# Main
 
-get '/modules/**' => sub {
-     my $file =  file( $repos, request->uri() );
-     status 404 and return 'Not found' if not -e $file;
-     return send_file( $file, system_path => 1 );
-};
+GetOptions( 'daemon'  => sub { setting(@_) },
+            'port=i'  => sub { setting(@_) },
+            'repos=s' => \$REPOS ) or pod2usage();
 
-#----------------------------------------------------------------------------
+pod2usage(-message => 'Must specify a repository') if not $REPOS;
+$PINTO  = Pinto->new(repos => $REPOS, quiet => 1);
 
 Dancer::dance();
 
-#-----------------------------------------------------------------------------
+#----------------------------------------------------------------------------
 
 __END__
 
@@ -122,11 +127,14 @@ __END__
 
 =head1 DESCRIPTION
 
-L<pinto-server> is the utility program for starting the
-L<Pinto::Server>.  At the moment, L<pinto-server> is based on
-L<Dancer>, so it supports whatever command-line switches that
-L<Dancer::GetOpt> provides.  Say C<pinto-server --help> to get a
-listing of the available options.
+Before running L<pinto-server> you must first create a Pinto
+repository.  See L<pinto-admin> for instructions on that.
+
+L<pinto-server> provides a web API to a L<Pinto> repository.  Remote
+clients (like L<pinto-remote>) can use this API to add distributions,
+remove packages, and list the contents of the Pinto repository.  In
+addition, L<pinto-server> exposes the contents of your repository, so
+you can use it as the source of distributions for L<cpan> or L<cpanm>.
 
 =head1 ARGUMENTS
 
@@ -134,8 +142,7 @@ listing of the available options.
 
 =item --repos=PATH
 
-The path to the Pinto repository you wish to serve.  The repository
-must already exist.
+The path to the Pinto repository you wish to serve.
 
 =back
 
@@ -145,13 +152,44 @@ must already exist.
 
 =item --daemon
 
-If set, the L<pinto-server> will fork and run in a separate process.
+Tells L<pinto-server> to fork and run in a separate process.
 
 =item --port=N
 
 Sets the port number for the server to listen on.  Default is 3000.
 
 =back
+
+=head1 DEPLOYMENT
+
+L<pinto-server> can be run as a stand-alone server as shown in the
+L</"SYNOPSIS">.  However, this may not perform well under heavy load.
+
+L<pinto-server> is also PSGI compatible, so if you need a more
+powerful robust server, you can run it under L<Plack> like this:
+
+  $> plackup [OPTIONS] /path/to/pinto-server
+
+
+=head1 CAVEATS
+
+If you are running L<pinto-server> and have configured L<Pinto> to use
+a VCS-based store, such as L<Pinto::Store::VCS::Svn> or
+L<Pinto::Store::VCS::Git>, then you must not mess with the VCS
+directly (at least not the part of the VCS that holds the Pinto
+repository).  This is because L<pinto-server> only initializes the
+working copy of the repository at startup.  Thereafter, it assumes
+that it is the only actor affecting the Pinto repository in the VCS.
+If you start modifying Pinto's area of the VCS directly, then the
+working copy for L<pinto-server> will become out of date and conflicts
+will happen.
+
+=head1 LIMITATIONS
+
+L<pinto-server> speaks HTTP, but does not actually serve HTML.  At the
+moment, it is geared toward command line tools like L<pinto-remote> so
+it just returns plain text.  This will probably change as
+L<pinto-server> evolves into a real web application.
 
 =cut
 
