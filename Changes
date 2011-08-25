@@ -1,5 +1,12 @@
 {{$NEXT}}
 
+    Now required Pinto 0.020, which supports the Nop action.
+
+    pinto-server will now always pull/update your repository
+    from VCS upon startup.  This helps ensure that the
+    repository is in a good state when we start.  But we
+    never pull/update again after that.
+
 0.017     2011-08-24 00:24:17 America/Los_Angeles
 
     Now requires Pinto 0.017 or newer, which runs better under

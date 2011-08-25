@@ -10,7 +10,7 @@ use Pod::Usage;
 use Getopt::Long;
 use Path::Class;
 use File::Temp;
-use Pinto 0.017;
+use Pinto 0.020;
 
 use Dancer ':syntax';
 
@@ -39,7 +39,7 @@ post '/action/add' => sub {
     my $dist_file = $tempdir->file( $dist->basename() );
     $dist->copy_to( $dist_file );
 
-    $PINTO->new_action_batch();
+    $PINTO->new_action_batch(noinit => 1);
     $PINTO->add_action('Add', dist => $dist_file, author => $author);
     my $result = $PINTO->run_actions();
 
@@ -58,7 +58,7 @@ post '/action/remove' => sub {
     my $package = param('package')
       or ( status 500 and return 'No package supplied');
 
-    $PINTO->new_action_batch();
+    $PINTO->new_action_batch(noinit => 1);
     $PINTO->add_action('Remove', package => $package, author => $author);
     my $result = $PINTO->run_actions();
 
@@ -73,7 +73,7 @@ post '/action/list' => sub {
     my $buffer = '';
     my $type = ucfirst param('type') || 'All';
 
-    $PINTO->new_action_batch();
+    $PINTO->new_action_batch(noinit => 1);
     $PINTO->add_action("List::$type", out => \$buffer);
     my $result = $PINTO->run_actions();
 
@@ -82,6 +82,7 @@ post '/action/list' => sub {
 };
 
 #----------------------------------------------------------------------------
+# Route for indexes and dists
 
 get qr{^ /(authors|modules)/(.+) }x => sub {
      my $file =  file( $REPOS, request->uri() );
@@ -113,9 +114,23 @@ GetOptions( 'daemon'  => sub { setting(@_) },
             'repos=s' => \$REPOS ) or pod2usage();
 
 pod2usage(-message => 'Must specify a repository') if not $REPOS;
-$PINTO  = Pinto->new(repos => $REPOS, quiet => 1);
+
+initialize_pinto();
 
 Dancer::dance();
+
+#----------------------------------------------------------------------------
+# Run the Nop action, just to initialize the store.
+
+sub initialize_pinto {
+    print 'Starting up Pinto ... ';
+    $PINTO  = Pinto->new(repos => $REPOS, quiet => 1);
+    $PINTO->new_action_batch(noinit => 0);
+    $PINTO->add_action('Nop');
+    my $result = $PINTO->run_actions();
+    die $result->to_string() if not $result->is_success();
+    print "DONE\n";
+}
 
 #----------------------------------------------------------------------------
 
