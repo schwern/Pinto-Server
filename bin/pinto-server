@@ -21,7 +21,6 @@ use Dancer ':syntax';
 #-----------------------------------------------------------------------------
 # Globals
 
-my $PINTO;
 my $REPOS;
 
 #----------------------------------------------------------------------------
@@ -39,9 +38,10 @@ post '/action/add' => sub {
     my $dist_file = $tempdir->file( $dist->basename() );
     $dist->copy_to( $dist_file );
 
-    $PINTO->new_action_batch(noinit => 1);
-    $PINTO->add_action('Add', dist => $dist_file, author => $author);
-    my $result = $PINTO->run_actions();
+    my $pinto = pinto();
+    $pinto->new_action_batch(noinit => 1);
+    $pinto->add_action('Add', dist => $dist_file, author => $author);
+    my $result = $pinto->run_actions();
 
     status 200 and return if $result->is_success();
     status 500 and return $result->to_string();
@@ -58,9 +58,10 @@ post '/action/remove' => sub {
     my $package = param('package')
       or ( status 500 and return 'No package supplied');
 
-    $PINTO->new_action_batch(noinit => 1);
-    $PINTO->add_action('Remove', package => $package, author => $author);
-    my $result = $PINTO->run_actions();
+    my $pinto = pinto();
+    $pinto->new_action_batch(noinit => 1);
+    $pinto->add_action('Remove', package => $package, author => $author);
+    my $result = $pinto->run_actions();
 
     status 200 and return if $result->is_success();
     status 500 and return $result->to_string();
@@ -73,9 +74,10 @@ post '/action/list' => sub {
     my $buffer = '';
     my $type = ucfirst param('type') || 'All';
 
-    $PINTO->new_action_batch(noinit => 1);
-    $PINTO->add_action("List::$type", out => \$buffer);
-    my $result = $PINTO->run_actions();
+    my $pinto = pinto();
+    $pinto->new_action_batch(noinit => 1);
+    $pinto->add_action("List::$type", out => \$buffer);
+    my $result = $pinto->run_actions();
 
     status 200 and return $buffer if $result->is_success();
     status 500 and return $result->to_string;
@@ -115,21 +117,12 @@ GetOptions( 'daemon'  => sub { setting(@_) },
 
 pod2usage(-message => 'Must specify a repository') if not $REPOS;
 
-initialize_pinto();
-
 Dancer::dance();
 
 #----------------------------------------------------------------------------
-# Run the Nop action, just to initialize the store.
 
-sub initialize_pinto {
-    print 'Starting up Pinto ... ';
-    $PINTO  = Pinto->new(repos => $REPOS, quiet => 1);
-    $PINTO->new_action_batch(noinit => 0);
-    $PINTO->add_action('Nop');
-    my $result = $PINTO->run_actions();
-    die $result->to_string() if not $result->is_success();
-    print "DONE\n";
+sub pinto {
+    return Pinto->new(repos => $REPOS, quiet => 1);
 }
 
 #----------------------------------------------------------------------------
