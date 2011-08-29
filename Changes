@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.018     2011-08-28 20:59:15 America/Los_Angeles
+
     Now required Pinto 0.020, which supports the Nop action.
 
     pinto-server will now always pull/update your repository
