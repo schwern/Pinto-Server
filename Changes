@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+    Now requires Pinto 0.021, which behaves better in a 
+    server environment.  I thought I had fixed this in version 
+    0.017, but I was wrong.
+
 0.018     2011-08-28 20:59:15 America/Los_Angeles
 
     Now required Pinto 0.020, which supports the Nop action.
