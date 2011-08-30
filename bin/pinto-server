@@ -10,9 +10,9 @@ use Pod::Usage;
 use Getopt::Long;
 use Path::Class;
 use File::Temp;
-use Pinto 0.020;
+use Pinto 0.021;
 
-use Dancer ':syntax';
+use Dancer qw(:syntax);
 
 #-----------------------------------------------------------------------------
 
@@ -113,13 +113,30 @@ any qr{ .* }x => sub {
 
 GetOptions( 'daemon'  => sub { setting(@_) },
             'port=i'  => sub { setting(@_) },
-            'repos=s' => \$REPOS ) or pod2usage();
+            'repos|r=s' => \$REPOS ) or pod2usage();
 
 pod2usage(-message => 'Must specify a repository') if not $REPOS;
 
-Dancer::dance();
+initialize();
+
+dance();
 
 #----------------------------------------------------------------------------
+
+sub initialize {
+
+    print 'Initializing pinto ... ';
+    my $pinto = pinto();
+    $pinto->new_action_batch(noinit => 0);
+    $pinto->add_action('Nop');
+    $pinto->run_actions();
+    print "Done\n";
+
+    return 1;
+}
+
+#----------------------------------------------------------------------------
+
 
 sub pinto {
     return Pinto->new(repos => $REPOS, quiet => 1);
