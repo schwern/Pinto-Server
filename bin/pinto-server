@@ -129,7 +129,8 @@ sub initialize {
     my $pinto = pinto();
     $pinto->new_action_batch(noinit => 0);
     $pinto->add_action('Nop');
-    $pinto->run_actions();
+    my $result = $pinto->run_actions();
+    die $result->to_string() . "\n" if not $result->is_success();
     print "Done\n";
 
     return 1;
