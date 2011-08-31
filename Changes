@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+    Now requires Pinto 0.23, which has a different interface.
+
 0.019     2011-08-30 01:14:43 America/Los_Angeles
 
     Now requires Pinto 0.021, which behaves better in a 
