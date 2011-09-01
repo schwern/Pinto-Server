@@ -13,7 +13,7 @@ use Pinto 0.023;
 use Pinto::Types qw(Dir);
 use MooseX::Types::Moose qw(Int Bool);
 use Pinto::Server::Routes;
-use Dancer qw(:moose :syntax);
+use Dancer qw(:moose :script);
 
 #-----------------------------------------------------------------------------
 
