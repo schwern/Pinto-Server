@@ -13,7 +13,7 @@ use Pinto::Server::Routes;
 use Dancer ();
 use Dancer::Test;
 
-use Test::More (tests => 13);
+use Test::More (tests => 21);
 
 #------------------------------------------------------------------------------
 # Create a repository
@@ -71,7 +71,7 @@ is $response->{status}, 200, 'List action was successful';
 like $response->{content}, qr{M/ME/ME/FooAndBar}, 'listing has added dist';
 
 #------------------------------------------------------------------------------
-# Adding the same dist again should cause an exception
+# Adding the same dist again should cause a Pinto exception
 
 $params = {author => 'YOU'};
 $files = [ {filename => $dist_file, name => 'dist_file' } ];
@@ -94,3 +94,26 @@ $params = {type => 'All'};
 $response = dancer_response( POST => '/action/list', {params => $params} );
 is $response->{status}, 200, 'List action was successful';
 is $response->{content}, '', 'listing is now empty';
+
+#------------------------------------------------------------------------------
+# Test server exceptions
+
+$params = {};
+$response = dancer_response( POST => '/action/add', {params => $params} );
+is $response->{status}, 500, 'add action without author failed';
+like $response->{content}, qr/No author/, 'got correct exception msg';
+
+$params = {author => 'WHATEVER'};
+$response = dancer_response( POST => '/action/add', {params => $params} );
+is $response->{status}, 500, 'add action without dist_file failed';
+like $response->{content}, qr/No dist_file/, 'got correct exception msg';
+
+$params = {};
+$response = dancer_response( POST => '/action/remove', {params => $params} );
+is $response->{status}, 500, 'remove action without author failed';
+like $response->{content}, qr/No author/, 'got correct exception msg';
+
+$params = {author => 'WHATEVER'};
+$response = dancer_response( POST => '/action/remove', {params => $params} );
+is $response->{status}, 500, 'add action without dist_name failed';
+like $response->{content}, qr/No dist_name/, 'got correct exception msg';
