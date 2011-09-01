@@ -8,142 +8,20 @@ use warnings;
 
 use Pod::Usage;
 use Getopt::Long;
-use Path::Class;
-use File::Temp;
-use Pinto 0.023;
 
-use Dancer qw(:syntax);
+use Pinto::Server;
 
 #-----------------------------------------------------------------------------
 
 # VERSION
 
 #-----------------------------------------------------------------------------
-# Globals
 
-my $REPOS;
-
-#----------------------------------------------------------------------------
-# Dancer routes
-
-post '/action/add' => sub {
-
-    my $author = param('author')
-      or (status 500 and return 'No author supplied');
-
-    my $dist_file   = upload('dist_file')
-      or (status 500 and return 'No dist_file supplied');
-
-    # TODO: if $dist is a url, don't copy.
-    # Just pass it through and let Pinto fetch it for us.
-    my $tempdir = dir( File::Temp::tempdir(CLEANUP=>1) );
-    my $temp_dist_file = $tempdir->file( $dist_file->basename() );
-    $dist_file->copy_to( $temp_dist_file );
-
-    my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
-    $pinto->add_action('Add', dist_file => $temp_dist_file, author => $author);
-    my $result = $pinto->run_actions();
-
-    status 200 and return if $result->is_success();
-    status 500 and return $result->to_string();
-
-};
-
-#----------------------------------------------------------------------------
-
-post '/action/remove' => sub {
-
-    my $author  = param('author')
-      or (status 500 and return 'No author supplied');
-
-    my $dist_name = param('dist_name')
-      or ( status 500 and return 'No dist_name supplied');
-
-    my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
-    $pinto->add_action('Remove', dist_name => $dist_name, author => $author);
-    my $result = $pinto->run_actions();
-
-    status 200 and return if $result->is_success();
-    status 500 and return $result->to_string();
-};
-
-#----------------------------------------------------------------------------
-
-post '/action/list' => sub {
-
-    my $buffer = '';
-    my $type = ucfirst param('type') || 'All';
-
-    my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
-    $pinto->add_action("List::$type", out => \$buffer);
-    my $result = $pinto->run_actions();
-
-    status 200 and return $buffer if $result->is_success();
-    status 500 and return $result->to_string;
-};
-
-#----------------------------------------------------------------------------
-# Route for indexes and dists
-
-get qr{^ /(authors|modules)/(.+) }x => sub {
-     my $file =  file( $REPOS, request->uri() );
-     status 404 and return 'Not found' if not -e $file;
-     return send_file( $file, system_path => 1 );
-};
-
-#----------------------------------------------------------------------------
-# Ping route
-
-get '/' => sub {
-    status 200;
-    return 'Pinto OK';
-};
-
-#-----------------------------------------------------------------------------
-# Fallback route
-
-any qr{ .* }x => sub {
-    status 404;
-    return 'Not found';
-};
-
-#-----------------------------------------------------------------------------
-# Main
-
-GetOptions( 'daemon'  => sub { setting(@_) },
-            'port=i'  => sub { setting(@_) },
-            'repos|r=s' => \$REPOS ) or pod2usage();
-
-pod2usage(-message => 'Must specify a repository') if not $REPOS;
-
-initialize();
-
-dance();
-
-#----------------------------------------------------------------------------
-
-sub initialize {
-
-    print 'Initializing pinto ... ';
-    my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 0);
-    $pinto->add_action('Nop');
-    my $result = $pinto->run_actions();
-    die $result->to_string() . "\n" if not $result->is_success();
-    print "Done\n";
-
-    return 1;
-}
-
-#----------------------------------------------------------------------------
-
-
-sub pinto {
-    return Pinto->new(repos => $REPOS, quiet => 1);
-}
+my %opts;
+my @opt_spec = qw(daemon port=i repos|r=s);
+GetOptions(\%opts, @opt_spec) or pod2usage();
+pod2usage(-message => 'Must specify a repository') if not $opts{repos};
+Pinto::Server->new(%opts)->run();
 
 #----------------------------------------------------------------------------
 
@@ -207,10 +85,10 @@ L<Pinto::Store::VCS::Git>, then you must not mess with the VCS
 directly (at least not the part of the VCS that holds the Pinto
 repository).  This is because L<pinto-server> only initializes the
 working copy of the repository at startup.  Thereafter, it assumes
-that it is the only actor affecting the Pinto repository in the VCS.
-If you start modifying Pinto's area of the VCS directly, then the
-working copy for L<pinto-server> will become out of date and conflicts
-will happen.
+that it is the only actor affecting the Pinto repository within the
+VCS.  If you start modifying Pinto's area of the VCS directly, then
+the working copy for L<pinto-server> will become out of date and
+conflicts will happen.
 
 =head1 LIMITATIONS
 
