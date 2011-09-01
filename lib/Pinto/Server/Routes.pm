@@ -33,6 +33,10 @@ post '/action/add' => sub {
     my $dist_file   = upload('dist_file')
       or (status 500 and return 'No dist_file supplied');
 
+    # Must protect against passing an undef argument, or Moose will bitch
+    my %batch_args = ( param('message') ? (message => param('message')) : (),
+                       param('tag')     ? (tag     => param('tag'))     : () );
+
     # TODO: if $dist is a url, don't copy.
     # Just pass it through and let Pinto fetch it for us.
     my $tempdir = dir( File::Temp::tempdir(CLEANUP=>1) );
@@ -40,7 +44,7 @@ post '/action/add' => sub {
     $dist_file->copy_to( $temp_dist_file );
 
     my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
+    $pinto->new_action_batch(noinit => 1, %batch_args);
     $pinto->add_action('Add', dist_file => $temp_dist_file, author => $author);
     my $result = $pinto->run_actions();
 
@@ -59,8 +63,12 @@ post '/action/remove' => sub {
     my $dist_name = param('dist_name')
       or ( status 500 and return 'No dist_name supplied');
 
+    # Must protect against passing an undef argument, or Moose will bitch
+    my %batch_args = ( param('message') ? (message => param('message')) : (),
+                       param('tag')     ? (tag     => param('tag'))     : () );
+
     my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
+    $pinto->new_action_batch(noinit => 1, %batch_args);
     $pinto->add_action('Remove', dist_name => $dist_name, author => $author);
     my $result = $pinto->run_actions();
 

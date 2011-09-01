@@ -10,7 +10,6 @@ use FindBin qw($Bin);
 use Pinto;
 use Pinto::Server::Routes;
 
-use Dancer ();
 use Dancer::Test;
 
 use Test::More (tests => 21);
