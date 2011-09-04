@@ -3,13 +3,14 @@
 use strict;
 use warnings;
 
-use Test::More (tests => 8);
+use Test::More (tests => 9);
 use Pinto::Server::Routes;
 use Dancer::Test;
 
 route_exists( [POST => '/action/add'] );
 route_exists( [POST => '/action/list'] );
 route_exists( [POST => '/action/remove'] );
+route_exists( [POST => '/action/nop'] );
 route_exists( [GET  => '/modules/something'] );
 route_exists( [GET  => '/authors/id/'] );
 

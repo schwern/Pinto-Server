@@ -12,7 +12,7 @@ use Pinto::Server::Routes;
 
 use Dancer::Test;
 
-use Test::More (tests => 21);
+use Test::More (tests => 23);
 
 #------------------------------------------------------------------------------
 # Create a repository
@@ -93,6 +93,13 @@ $params = {type => 'All'};
 $response = dancer_response( POST => '/action/list', {params => $params} );
 is $response->{status}, 200, 'List action was successful';
 is $response->{content}, '', 'listing is now empty';
+
+#------------------------------------------------------------------------------
+# Just exercising the Nop
+
+$response = dancer_response( POST => '/action/nop' );
+is $response->{status}, 200, 'Nop action was successful';
+is $response->{content}, '', 'output was empty';
 
 #------------------------------------------------------------------------------
 # Test server exceptions
