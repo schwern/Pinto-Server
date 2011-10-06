@@ -3,11 +3,10 @@
 use strict;
 use warnings;
 
-use File::Temp;
 use Path::Class;
 use FindBin qw($Bin);
 
-use Pinto;
+use Pinto::Tester;
 use Pinto::Server::Routes;
 
 use Dancer::Test;
@@ -17,16 +16,14 @@ use Test::More (tests => 23);
 #------------------------------------------------------------------------------
 # Create a repository
 
-my $repos = dir( File::Temp::tempdir(CLEANUP => 1) );
-my $pinto = Pinto->new(out => \my $buffer, repos => $repos, verbose => 3);
-
-$pinto->new_action_batch();
-$pinto->add_action('Create')->run_actions();
+my $t     = Pinto::Tester->new();
+my $pinto = $t->pinto();
+my $repos = $t->repos();
 
 #------------------------------------------------------------------------------
 # Setup the server
 
-Dancer::set( 'repos' => $repos);
+Dancer::set(repos => $repos);
 
 #------------------------------------------------------------------------------
 # Get a distribution to play with.  Dancer::Test::dancer_response() does not

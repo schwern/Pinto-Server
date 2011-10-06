@@ -44,8 +44,8 @@ post '/action/add' => sub {
     $dist_file->copy_to( $temp_dist_file );
 
     my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1, %batch_args);
-    $pinto->add_action('Add', dist_file => $temp_dist_file, author => $author);
+    $pinto->new_batch(noinit => 1, %batch_args);
+    $pinto->add_action('Add', archive => $temp_dist_file, author => $author);
     my $result = $pinto->run_actions();
 
     status 200 and return if $result->is_success();
@@ -68,8 +68,8 @@ post '/action/remove' => sub {
                        param('tag')     ? (tag     => param('tag'))     : () );
 
     my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1, %batch_args);
-    $pinto->add_action('Remove', dist_name => $dist_name, author => $author);
+    $pinto->new_batch(noinit => 1, %batch_args);
+    $pinto->add_action('Remove', path => $dist_name, author => $author);
     my $result = $pinto->run_actions();
 
     status 200 and return if $result->is_success();
@@ -84,7 +84,7 @@ post '/action/list' => sub {
     my $type = ucfirst param('type') || 'All';
 
     my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
+    $pinto->new_batch(noinit => 1);
     $pinto->add_action("List::$type", out => \$buffer);
     my $result = $pinto->run_actions();
 
@@ -97,7 +97,7 @@ post '/action/list' => sub {
 post '/action/nop' => sub {
 
     my $pinto = pinto();
-    $pinto->new_action_batch(noinit => 1);
+    $pinto->new_batch(noinit => 1);
     $pinto->add_action('Nop');
     my $result = $pinto->run_actions();
 

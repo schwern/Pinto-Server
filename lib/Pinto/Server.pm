@@ -8,7 +8,7 @@ use Carp;
 use Path::Class;
 use File::Temp;
 
-use Pinto 0.023;
+use Pinto 0.025;
 
 use Pinto::Types qw(Dir);
 use MooseX::Types::Moose qw(Int Bool);
@@ -92,7 +92,7 @@ sub _initialize {
 
     print 'Initializing pinto ... ';
     my $pinto = Pinto::Server::Routes::pinto();
-    $pinto->new_action_batch(noinit => 0);
+    $pinto->new_batch(noinit => 0);
     $pinto->add_action('Nop');
     my $result = $pinto->run_actions();
     die "\n" . $result->to_string() . "\n" if not $result->is_success();
