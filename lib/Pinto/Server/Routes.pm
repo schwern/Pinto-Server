@@ -107,36 +107,6 @@ post '/action/nop' => sub {
 };
 
 #----------------------------------------------------------------------------
-
-sub generate_action_route {
-    my ($action, @action_params) = @_;
-
-    my $handler = sub {
-
-        my %action_args;
-        for my $param ( @action_params ) {
-            my $value = param($param);
-            status 500 and return "Must supply $param parameter" if not $value;
-            $action_args{$param} = $value;
-        }
-
-        # Must protect against passing an undef argument, or Moose will bitch
-        my %batch_args = ( param('message') ? (message => param('message')) : (),
-                           param('tag')     ? (tag     => param('tag'))     : () );
-
-        my $pinto = pinto();
-        $pinto->new_batch(noinit => 1, %batch_args);
-        $pinto->add_action(ucfirst $action, %action_args);
-        my $result = $pinto->run_actions();
-
-        status 200 and return if $result->is_success();
-        status 500 and return $result->to_string;
-    };
-
-    post "action/$action" => $handler;
-}
-
-#----------------------------------------------------------------------------
 # Route for indexes and dists
 
 get qr{^ /(authors|modules)/(.+) }x => sub {
