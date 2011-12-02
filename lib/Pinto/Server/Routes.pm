@@ -30,22 +30,22 @@ post '/action/add' => sub {
     my $author = param('author')
       or (status 500 and return 'No author supplied');
 
-    my $dist_file   = upload('dist_file')
-      or (status 500 and return 'No dist_file supplied');
+    my $archive   = upload('archive')
+      or (status 500 and return 'No archive supplied');
 
     # Must protect against passing an undef argument, or Moose will bitch
     my %batch_args = ( param('message') ? (message => param('message')) : (),
                        param('tag')     ? (tag     => param('tag'))     : () );
 
-    # TODO: if $dist is a url, don't copy.
-    # Just pass it through and let Pinto fetch it for us.
+    # TODO: if $archive is a url, don't copy.  Just
+    # pass it through and let Pinto fetch it for us.
     my $tempdir = dir( File::Temp::tempdir(CLEANUP=>1) );
-    my $temp_dist_file = $tempdir->file( $dist_file->basename() );
-    $dist_file->copy_to( $temp_dist_file );
+    my $temp_archive = $tempdir->file( $archive->basename() );
+    $archive->copy_to( $temp_archive );
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1, %batch_args);
-    $pinto->add_action('Add', archive => $temp_dist_file, author => $author);
+    $pinto->add_action('Add', archive => $temp_archive, author => $author);
     my $result = $pinto->run_actions();
 
     status 200 and return if $result->is_success();
@@ -60,8 +60,8 @@ post '/action/remove' => sub {
     my $author  = param('author')
       or (status 500 and return 'No author supplied');
 
-    my $dist_name = param('dist_name')
-      or ( status 500 and return 'No dist_name supplied');
+    my $path = param('path')
+      or ( status 500 and return 'No path supplied');
 
     # Must protect against passing an undef argument, or Moose will bitch
     my %batch_args = ( param('message') ? (message => param('message')) : (),
@@ -69,7 +69,7 @@ post '/action/remove' => sub {
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1, %batch_args);
-    $pinto->add_action('Remove', path => $dist_name, author => $author);
+    $pinto->add_action('Remove', path => $path, author => $author);
     my $result = $pinto->run_actions();
 
     status 200 and return if $result->is_success();
@@ -81,11 +81,12 @@ post '/action/remove' => sub {
 post '/action/list' => sub {
 
     my $buffer = '';
-    my $type = ucfirst param('type') || 'All';
+    my $format = param('format');
+    my @format = $format ? (format => $format) : ();
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1);
-    $pinto->add_action("List::$type", out => \$buffer);
+    $pinto->add_action('List', @format, out => \$buffer);
     my $result = $pinto->run_actions();
 
     status 200 and return $buffer if $result->is_success();
@@ -104,6 +105,36 @@ post '/action/nop' => sub {
     status 200 and return if $result->is_success();
     status 500 and return $result->to_string;
 };
+
+#----------------------------------------------------------------------------
+
+sub generate_action_route {
+    my ($action, @action_params) = @_;
+
+    my $handler = sub {
+
+        my %action_args;
+        for my $param ( @action_params ) {
+            my $value = param($param);
+            status 500 and return "Must supply $param parameter" if not $value;
+            $action_args{$param} = $value;
+        }
+
+        # Must protect against passing an undef argument, or Moose will bitch
+        my %batch_args = ( param('message') ? (message => param('message')) : (),
+                           param('tag')     ? (tag     => param('tag'))     : () );
+
+        my $pinto = pinto();
+        $pinto->new_batch(noinit => 1, %batch_args);
+        $pinto->add_action(ucfirst $action, %action_args);
+        my $result = $pinto->run_actions();
+
+        status 200 and return if $result->is_success();
+        status 500 and return $result->to_string;
+    };
+
+    post "action/$action" => $handler;
+}
 
 #----------------------------------------------------------------------------
 # Route for indexes and dists
