@@ -3,16 +3,16 @@ package Pinto::Server;
 # ABSTRACT: Web interface to a Pinto repository
 
 use Moose;
+use MooseX::Types::Moose qw(Int Bool);
 
 use Carp;
 use Path::Class;
 use File::Temp;
 
-use Pinto 0.025;
-
+use Pinto '0.025_002';
 use Pinto::Types qw(Dir);
-use MooseX::Types::Moose qw(Int Bool);
 use Pinto::Server::Routes;
+
 use Dancer qw(:moose :script);
 
 #-----------------------------------------------------------------------------
@@ -78,8 +78,6 @@ sub run {
     Dancer::set( repos  => $self->repos()  );
     Dancer::set( port   => $self->port()   );
     Dancer::set( daemon => $self->daemon() );
-    Dancer::set( logger => 'console'       );
-    Dancer::set( log    => 'debug'         );
 
     $self->_initialize();
     return Dancer::dance();
@@ -92,8 +90,10 @@ sub _initialize {
 
     print 'Initializing pinto ... ';
     my $pinto = Pinto::Server::Routes::pinto();
+
     $pinto->new_batch(noinit => 0);
     $pinto->add_action('Nop');
+
     my $result = $pinto->run_actions();
     die "\n" . $result->to_string() . "\n" if not $result->is_success();
     print "Done\n";

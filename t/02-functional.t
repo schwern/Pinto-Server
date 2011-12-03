@@ -17,8 +17,8 @@ use Test::More (tests => 23);
 # Create a repository
 
 my $t     = Pinto::Tester->new();
+my $repos = $t->root_dir();
 my $pinto = $t->pinto();
-my $repos = $t->repos();
 
 #------------------------------------------------------------------------------
 # Setup the server
@@ -44,7 +44,7 @@ my $params = {};
 #------------------------------------------------------------------------------
 # The repository is brand new, so the listing should be empty
 
-$params = {type => 'all'};
+$params = {};
 my $response = dancer_response( POST => '/action/list', {params => $params} );
 is $response->{status}, 200, 'list action was successful';
 is $response->{content}, '', 'listing is empty';
@@ -53,7 +53,7 @@ is $response->{content}, '', 'listing is empty';
 # Now try adding a dist
 
 $params = {author => 'ME'};
-$files = [ {filename => $dist_file, name => 'dist_file' } ];
+$files = [ {filename => $dist_file, name => 'archive' } ];
 $response = Dancer::Test::dancer_response( POST => '/action/add', {params => $params, files => $files} );
 is $response->{status}, 200, 'add action was successful';
 is $response->{content}, '', 'response is empty';
@@ -61,7 +61,7 @@ is $response->{content}, '', 'response is empty';
 #------------------------------------------------------------------------------
 # The listing should now contain our dist
 
-$params = {type => 'All'};
+$params = {};
 $response = dancer_response( POST => '/action/list', {params => $params} );
 is $response->{status}, 200, 'List action was successful';
 like $response->{content}, qr{M/ME/ME/FooAndBar}, 'listing has added dist';
@@ -70,7 +70,7 @@ like $response->{content}, qr{M/ME/ME/FooAndBar}, 'listing has added dist';
 # Adding the same dist again should cause a Pinto exception
 
 $params = {author => 'YOU'};
-$files = [ {filename => $dist_file, name => 'dist_file' } ];
+$files = [ {filename => $dist_file, name => 'archive'} ];
 $response = Dancer::Test::dancer_response( POST => '/action/add', {params => $params, files => $files} );
 is $response->{status}, 500, 'add action failed';
 like $response->{content}, qr/Only author ME can update/, 'response has exception';
@@ -78,7 +78,7 @@ like $response->{content}, qr/Only author ME can update/, 'response has exceptio
 #------------------------------------------------------------------------------
 # Now try removing the dist
 
-$params = {author => 'ME', dist_name => $dist_name};
+$params = {author => 'ME', path => $dist_name};
 $response = dancer_response( POST => '/action/remove', {params => $params} );
 is $response->{status}, 200, 'remove action was successful';
 is $response->{content}, '', 'response is empty';
@@ -109,7 +109,7 @@ like $response->{content}, qr/No author/, 'got correct exception msg';
 $params = {author => 'WHATEVER'};
 $response = dancer_response( POST => '/action/add', {params => $params} );
 is $response->{status}, 500, 'add action without dist_file failed';
-like $response->{content}, qr/No dist_file/, 'got correct exception msg';
+like $response->{content}, qr/No archive/, 'got correct exception msg';
 
 $params = {};
 $response = dancer_response( POST => '/action/remove', {params => $params} );
@@ -119,4 +119,4 @@ like $response->{content}, qr/No author/, 'got correct exception msg';
 $params = {author => 'WHATEVER'};
 $response = dancer_response( POST => '/action/remove', {params => $params} );
 is $response->{status}, 500, 'add action without dist_name failed';
-like $response->{content}, qr/No dist_name/, 'got correct exception msg';
+like $response->{content}, qr/No path/, 'got correct exception msg';

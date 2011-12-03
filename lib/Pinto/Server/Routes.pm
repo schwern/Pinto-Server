@@ -5,6 +5,7 @@ package Pinto::Server::Routes;                      ## no critic qw(Complexity)
 use strict;
 use warnings;
 
+use Pinto '0.025_002';
 use Path::Class;
 use File::Temp;
 use Dancer qw(:syntax);
@@ -21,7 +22,7 @@ Returns a new L<Pinto> object that is configured for this Server.
 
 =cut
 
-sub pinto { return Pinto->new(repos => setting('repos'), quiet => 1) }
+sub pinto { return Pinto->new(root_dir => setting('repos'), quiet => 1) }
 
 #----------------------------------------------------------------------------
 
