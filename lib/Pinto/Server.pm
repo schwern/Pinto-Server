@@ -9,7 +9,7 @@ use Carp;
 use Path::Class;
 use File::Temp;
 
-use Pinto '0.025_002';
+use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Server::Routes;
 

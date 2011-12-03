@@ -5,7 +5,7 @@ package Pinto::Server::Routes;                      ## no critic qw(Complexity)
 use strict;
 use warnings;
 
-use Pinto '0.025_002';
+use Pinto;
 use Path::Class;
 use File::Temp;
 use Dancer qw(:syntax);
