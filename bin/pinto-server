@@ -17,10 +17,12 @@ use Pinto::Server;
 
 #-----------------------------------------------------------------------------
 
-my %opts;
 my @opt_spec = qw(daemon port=i repos|r=s);
-GetOptions(\%opts, @opt_spec) or pod2usage();
+GetOptions(\my %opts, @opt_spec) or pod2usage();
+
+$opts{repos} ||= $ENV{PINTO_REPOSITORY};
 pod2usage(-message => 'Must specify a repository') if not $opts{repos};
+
 Pinto::Server->new(%opts)->run();
 
 #----------------------------------------------------------------------------
