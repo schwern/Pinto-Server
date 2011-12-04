@@ -88,14 +88,16 @@ sub run {
 sub _initialize {
     my ($self) = @_;
 
-    print 'Initializing pinto ... ';
-    my $pinto = Pinto::Server::Routes::pinto();
+    my $repos = $self->repos();
+    print "Initializing pinto at '$repos' ... ";
+    my $pinto = eval { Pinto::Server::Routes::pinto() };
+    print "\n" and die "$@" if not $pinto;
 
     $pinto->new_batch(noinit => 0);
     $pinto->add_action('Nop');
 
     my $result = $pinto->run_actions();
-    die "\n" . $result->to_string() . "\n" if not $result->is_success();
+    print "\n" and die $result->to_string() . "\n" if not $result->is_success();
     print "Done\n";
 
     return $self;
