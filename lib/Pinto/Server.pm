@@ -97,7 +97,9 @@ sub _initialize {
     $pinto->add_action('Nop');
 
     my $result = $pinto->run_actions();
-    print "\n" and die $result->to_string() . "\n" if not $result->is_success();
+    print "\n" and croak $result->to_string() . "\n"
+      if not $result->is_success();
+
     print "Done\n";
 
     return $self;
