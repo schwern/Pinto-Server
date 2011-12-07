@@ -1,9 +1,8 @@
 {{$NEXT}}
 
-    Brought up to date with the latest Pinto API.
-    Pinto and Pinto::Server are both evolving
-    rapidly, and I make no promises about backward
-    compatibility right now.
+    No new functionality.  Just matching up with the latest Pinto API.
+    Pinto and Pinto::Server are both evolving rapidly, and I make no
+    promises about backward compatibility right now.
 
 0.021     2011-09-03 21:43:25 America/Los_Angeles
 
