@@ -5,7 +5,6 @@ package Pinto::Server;
 use Moose;
 use MooseX::Types::Moose qw(Int Bool);
 
-use Carp;
 use Path::Class;
 use File::Temp;
 
@@ -88,6 +87,8 @@ sub run {
 sub _initialize {
     my ($self) = @_;
 
+    ## no critic qw(Carping)
+
     my $repos = $self->repos();
     print "Initializing pinto at '$repos' ... ";
     my $pinto = eval { Pinto::Server::Routes::pinto() };
@@ -97,8 +98,7 @@ sub _initialize {
     $pinto->add_action('Nop');
 
     my $result = $pinto->run_actions();
-    print "\n" and croak $result->to_string() . "\n"
-      if not $result->is_success();
+    print "\n" and die $result->to_string() . "\n" if not $result->is_success();
 
     print "Done\n";
 
