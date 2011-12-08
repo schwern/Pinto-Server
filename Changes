@@ -1,5 +1,9 @@
 {{$NEXT}}
 
+    Exceptions from Pinto are now trapped and returned in the body of
+    the response from the server.  This is more helpful than the 500
+    error page that Dancer throws up.
+
 0.026     2011-12-07 14:09:41 America/Los_Angeles
 
     No new functionality.  Just matching up with the latest Pinto API.
