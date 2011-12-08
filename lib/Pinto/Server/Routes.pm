@@ -47,8 +47,9 @@ post '/action/add' => sub {
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1, %batch_args);
     $pinto->add_action('Add', archive => $temp_archive, author => $author);
-    my $result = $pinto->run_actions();
+    my $result = eval { $pinto->run_actions() };
 
+    status 500 and return $@ if $@;
     status 200 and return if $result->is_success();
     status 500 and return $result->to_string();
 
@@ -71,8 +72,9 @@ post '/action/remove' => sub {
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1, %batch_args);
     $pinto->add_action('Remove', path => $path, author => $author);
-    my $result = $pinto->run_actions();
+    my $result = eval { $pinto->run_actions() };
 
+    status 500 and return $@ if $@;
     status 200 and return if $result->is_success();
     status 500 and return $result->to_string();
 };
@@ -88,8 +90,9 @@ post '/action/list' => sub {
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1);
     $pinto->add_action('List', @format, out => \$buffer);
-    my $result = $pinto->run_actions();
+    my $result = eval { $pinto->run_actions() };
 
+    status 500 and return $@ if $@;
     status 200 and return $buffer if $result->is_success();
     status 500 and return $result->to_string;
 };
@@ -101,8 +104,9 @@ post '/action/nop' => sub {
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1);
     $pinto->add_action('Nop');
-    my $result = $pinto->run_actions();
+    my $result = eval { $pinto->run_actions() };
 
+    status 500 and return $@ if $@;
     status 200 and return if $result->is_success();
     status 500 and return $result->to_string;
 };
