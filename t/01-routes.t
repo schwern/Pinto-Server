@@ -11,7 +11,6 @@ route_exists( [POST => '/action/add'] );
 route_exists( [POST => '/action/list'] );
 route_exists( [POST => '/action/remove'] );
 route_exists( [POST => '/action/nop'] );
-route_exists( [GET  => '/version'] );
 route_exists( [GET  => '/modules/something'] );
 route_exists( [GET  => '/authors/id/'] );
 
