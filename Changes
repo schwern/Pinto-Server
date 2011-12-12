@@ -4,8 +4,8 @@
     the response from the server.  This is more helpful than the 500
     error page that Dancer throws up.
 
-    Added a new 'version' route, that returns the version of Pinto
-    that is running.
+    Added support for the statistics, pin, and unpin actions.  So
+    we now need Pinto version 0.028 or better.
 
 0.026     2011-12-07 14:09:41 America/Los_Angeles
 
