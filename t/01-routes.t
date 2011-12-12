@@ -14,10 +14,11 @@ route_exists( [POST => '/action/nop'] );
 route_exists( [POST => '/action/pin'] );
 route_exists( [POST => '/action/unpin'] );
 route_exists( [POST => '/action/statistics'] );
-
+route_exists( [POST => '/action/bogus'] );
 route_exists( [GET  => '/modules/something'] );
 route_exists( [GET  => '/authors/id/'] );
 
+response_status_is( [POST => '/action/bogus'], 500 );
 response_status_is( [GET => '/config'], 404 );
 response_status_is( [GET => '/bogus'], 404 );
 response_status_is( [GET => '/'], 200 );

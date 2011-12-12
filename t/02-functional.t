@@ -141,7 +141,14 @@ is $response->{content}, '', 'output was empty';
 
 $response = dancer_response( get => '/' );
 is $response->{status}, 200, 'Ping was successful';
-is $response->{content}, 'Pinto::Server 0.027 OK', 'Correct output';
+is $response->{content}, "Pinto::Server 0.027 OK\n", 'Correct output';
+
+#------------------------------------------------------------------------------
+# Bad action
+
+$response = dancer_response( POST => '/action/bogus' );
+is $response->{status}, 500, 'Bogus action was unsuccessful';
+like $response->{content}, qr{Action 'bogus' is not supported};
 
 #------------------------------------------------------------------------------
 # Test server exceptions

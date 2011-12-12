@@ -81,10 +81,10 @@ post '/action/list' => sub {
     status 500 and return 'Cannot supply packages and distributions together'
        if $pkgs and $dists;
 
-    my %args       = (out => \my $buffer);
-    $args{format}  = param('format') if param('format');
-    $args{where}   = {name => $pkgs} if $pkgs;
-    $args{where}   = {path => $dists} if $dists;
+    my %args             = (out => \my $buffer);
+    $args{format}        = param('format')  if param('format');
+    $args{where}->{name} = {like => "%$pkgs%"}  if $pkgs;
+    $args{where}->{path} = {like => "%$dists%"} if $dists;
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1);
@@ -169,7 +169,7 @@ post '/action/statistics' => sub {
 
 get qr{^ /(authors|modules)/(.+) }x => sub {
      my $file =  file( setting('repos'), request->uri() );
-     status 404 and return 'Not found' if not -e $file;
+     status 404 and return "Not found\n" if not -e $file;
      return send_file( $file, system_path => 1 );
 };
 
@@ -178,15 +178,28 @@ get qr{^ /(authors|modules)/(.+) }x => sub {
 
 get '/' => sub {
     status 200;
-    return sprintf 'Pinto::Server %s OK', __PACKAGE__->VERSION();
+    return sprintf "Pinto::Server %s OK\n", __PACKAGE__->VERSION();
 };
 
 #-----------------------------------------------------------------------------
-# Fallback route
+# Unknown actions.
+
+post qr{ /action/.* }x => sub {
+
+    status 500;
+    my $vers     = __PACKAGE__->VERSION();
+    my ($action) = (request->path() =~ m{ action/(.*)/? }mx);
+
+    return "Action '$action' is not supported by Pinto::Server version $vers\n";
+};
+
+#-----------------------------------------------------------------------------
+# Everything else.
 
 any qr{ .* }x => sub {
+
     status 404;
-    return 'Not found';
+    return 'Not Found';
 };
 
 #----------------------------------------------------------------------------
