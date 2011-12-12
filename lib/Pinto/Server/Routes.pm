@@ -112,6 +112,60 @@ post '/action/nop' => sub {
 };
 
 #----------------------------------------------------------------------------
+
+post '/action/pin' => sub {
+
+    my $pkg = param('package')
+      or ( status 500 and return 'No package supplied');
+
+    my $ver = param('version') || 0;
+
+    my $pinto = pinto();
+    $pinto->new_batch(noinit => 1);
+    $pinto->add_action('Pin', package => $pkg, version => $ver);
+    my $result = eval { $pinto->run_actions() };
+
+    status 500 and return $@ if $@;
+    status 200 and return if $result->is_success();
+    status 500 and return $result->to_string;
+};
+
+#----------------------------------------------------------------------------
+
+post '/action/unpin' => sub {
+
+    my $pkg = param('package')
+      or ( status 500 and return 'No package supplied');
+
+    my $pinto = pinto();
+    $pinto->new_batch(noinit => 1);
+    $pinto->add_action('Unpin', package => $pkg);
+    my $result = eval { $pinto->run_actions() };
+
+    status 500 and return $@ if $@;
+    status 200 and return if $result->is_success();
+    status 500 and return $result->to_string;
+};
+
+#----------------------------------------------------------------------------
+
+post '/action/statistics' => sub {
+
+    my $buffer = '';
+    my $format = param('format');
+    my @format = $format ? (format => $format) : ();
+
+    my $pinto = pinto();
+    $pinto->new_batch(noinit => 1);
+    $pinto->add_action('Statistics', @format, out => \$buffer);
+    my $result = eval { $pinto->run_actions() };
+
+    status 500 and return $@ if $@;
+    status 200 and return $buffer if $result->is_success();
+    status 500 and return $result->to_string;
+};
+
+#----------------------------------------------------------------------------
 # Route for indexes and dists
 
 get qr{^ /(authors|modules)/(.+) }x => sub {
@@ -125,7 +179,7 @@ get qr{^ /(authors|modules)/(.+) }x => sub {
 
 get '/' => sub {
     status 200;
-    return "Pinto::Server $VERSION OK";
+    return sprintf '%s %s OK', __PACKAGE__, __PACKAGE__->VERSION();
 };
 
 #-----------------------------------------------------------------------------

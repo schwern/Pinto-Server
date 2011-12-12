@@ -11,7 +11,7 @@ use Pinto::Server::Routes;
 
 use Dancer::Test;
 
-use Test::More (tests => 23);
+use Test::More;
 
 #------------------------------------------------------------------------------
 # Create a repository
@@ -76,6 +76,28 @@ is $response->{status}, 500, 'add action failed';
 like $response->{content}, qr/Only author ME can update/, 'response has exception';
 
 #------------------------------------------------------------------------------
+# Check the statistics
+
+$response = Dancer::Test::dancer_response( POST => '/action/statistics', {});
+is $response->{status}, 200, 'Statistics action was successful';
+like $response->{content}, qr/Distributions \s* 1 \s* 1/, 'Correct dist stats';
+like $response->{content}, qr/Packages \s* 1 \s* 1/, 'Correct pkg stats';
+
+#------------------------------------------------------------------------------
+# Try pinning
+
+$params = {package => 'Foo'};
+$response = Dancer::Test::dancer_response( POST => '/action/pin', {params => $params});
+is $response->{status}, 200, 'Pin action was successful';
+
+#------------------------------------------------------------------------------
+# Try unpinning
+
+$params = {package => 'Foo'};
+$response = Dancer::Test::dancer_response( POST => '/action/unpin', {params => $params});
+is $response->{status}, 200, 'Unpin action was successful';
+
+#------------------------------------------------------------------------------
 # Now try removing the dist
 
 $params = {author => 'ME', path => $dist_name};
@@ -120,3 +142,7 @@ $params = {author => 'WHATEVER'};
 $response = dancer_response( POST => '/action/remove', {params => $params} );
 is $response->{status}, 500, 'add action without dist_name failed';
 like $response->{content}, qr/No path/, 'got correct exception msg';
+
+#------------------------------------------------------------------------------
+
+done_testing();

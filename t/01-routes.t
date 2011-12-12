@@ -11,6 +11,10 @@ route_exists( [POST => '/action/add'] );
 route_exists( [POST => '/action/list'] );
 route_exists( [POST => '/action/remove'] );
 route_exists( [POST => '/action/nop'] );
+route_exists( [POST => '/action/pin'] );
+route_exists( [POST => '/action/unpin'] );
+route_exists( [POST => '/action/statistics'] );
+
 route_exists( [GET  => '/modules/something'] );
 route_exists( [GET  => '/authors/id/'] );
 
