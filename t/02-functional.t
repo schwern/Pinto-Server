@@ -141,7 +141,7 @@ is $response->{content}, '', 'output was empty';
 
 $response = dancer_response( get => '/' );
 is $response->{status}, 200, 'Ping was successful';
-is $response->{content}, "Pinto::Server 0.027 OK\n", 'Correct output';
+like $response->{content}, qr{Pinto::Server [\d._]+ OK\n}, 'Correct output';
 
 #------------------------------------------------------------------------------
 # Bad action
