@@ -75,10 +75,16 @@ post '/action/remove' => sub {
 
 post '/action/list' => sub {
 
-    my %args             = (out => \my $buffer);
-    $args{format}        = param('format') if param('format');
-    $args{packages}      = param('packages') if param('packages');
-    $args{distributions} = param('distributions') if param('distributions');
+    my $pkgs  = param('packages');
+    my $dists = param('distributions');
+
+    status 500 and return 'Cannot supply packages and distributions together'
+       if $pkgs and $dists;
+
+    my %args       = (out => \my $buffer);
+    $args{format}  = param('format') if param('format');
+    $args{where}   = {name => $pkgs} if $pkgs;
+    $args{where}   = {path => $dists} if $dists;
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1);

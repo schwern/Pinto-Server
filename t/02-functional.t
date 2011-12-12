@@ -75,6 +75,14 @@ is $response->{status}, 200, 'Formatted List action was successful';
 is $response->{content}, 'ME Foo-0.02', 'Formatted listing is correct';
 
 #------------------------------------------------------------------------------
+# Try listing a non-existant distribution
+
+$params = {distributions => 'Bogus'};
+$response = dancer_response( POST => '/action/list', {params => $params} );
+is $response->{status}, 200, 'List action for bogus distribution was successful';
+is $response->{content}, '', 'Listing is empty for bogus distribution';
+
+#------------------------------------------------------------------------------
 # Adding the same dist again should cause a Pinto exception
 
 $params = {author => 'YOU'};
