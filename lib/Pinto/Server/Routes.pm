@@ -31,12 +31,8 @@ post '/action/add' => sub {
     my $author = param('author')
       or (status 500 and return 'No author supplied');
 
-    my $archive   = upload('archive')
+    my $archive = upload('archive')
       or (status 500 and return 'No archive supplied');
-
-    # Must protect against passing an undef argument, or Moose will bitch
-    my %batch_args = ( param('message') ? (message => param('message')) : (),
-                       param('tag')     ? (tag     => param('tag'))     : () );
 
     # TODO: if $archive is a url, don't copy.  Just
     # pass it through and let Pinto fetch it for us.
@@ -45,7 +41,7 @@ post '/action/add' => sub {
     $archive->copy_to( $temp_archive );
 
     my $pinto = pinto();
-    $pinto->new_batch(noinit => 1, %batch_args);
+    $pinto->new_batch(noinit => 1, _get_batch_args());
     $pinto->add_action('Add', archive => $temp_archive, author => $author);
     my $result = eval { $pinto->run_actions() };
 
@@ -65,12 +61,8 @@ post '/action/remove' => sub {
     my $path = param('path')
       or ( status 500 and return 'No path supplied');
 
-    # Must protect against passing an undef argument, or Moose will bitch
-    my %batch_args = ( param('message') ? (message => param('message')) : (),
-                       param('tag')     ? (tag     => param('tag'))     : () );
-
     my $pinto = pinto();
-    $pinto->new_batch(noinit => 1, %batch_args);
+    $pinto->new_batch(noinit => 1, _get_batch_args());
     $pinto->add_action('Remove', path => $path, author => $author);
     my $result = eval { $pinto->run_actions() };
 
@@ -83,13 +75,14 @@ post '/action/remove' => sub {
 
 post '/action/list' => sub {
 
-    my $buffer = '';
-    my $format = param('format');
-    my @format = $format ? (format => $format) : ();
+    my %args             = (out => \my $buffer);
+    $args{format}        = param('format') if param('format');
+    $args{packages}      = param('packages') if param('packages');
+    $args{distributions} = param('distributions') if param('distributions');
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1);
-    $pinto->add_action('List', @format, out => \$buffer);
+    $pinto->add_action('List', %args);
     my $result = eval { $pinto->run_actions() };
 
     status 500 and return $@ if $@;
@@ -121,7 +114,7 @@ post '/action/pin' => sub {
     my $ver = param('version') || 0;
 
     my $pinto = pinto();
-    $pinto->new_batch(noinit => 1);
+    $pinto->new_batch(noinit => 1, _get_batch_args());
     $pinto->add_action('Pin', package => $pkg, version => $ver);
     my $result = eval { $pinto->run_actions() };
 
@@ -179,7 +172,7 @@ get qr{^ /(authors|modules)/(.+) }x => sub {
 
 get '/' => sub {
     status 200;
-    return sprintf '%s %s OK', __PACKAGE__, __PACKAGE__->VERSION();
+    return sprintf 'Pinto::Server %s OK', __PACKAGE__->VERSION();
 };
 
 #-----------------------------------------------------------------------------
@@ -189,6 +182,17 @@ any qr{ .* }x => sub {
     status 404;
     return 'Not found';
 };
+
+#----------------------------------------------------------------------------
+
+sub _get_batch_args {
+
+    my %args;
+    $args{message} = param('message') if param('message');
+    $args{tag}     = param('tag')     if param('tag');
+
+    return %args;
+}
 
 #----------------------------------------------------------------------------
 

@@ -67,6 +67,14 @@ is $response->{status}, 200, 'List action was successful';
 like $response->{content}, qr{M/ME/ME/FooAndBar}, 'listing has added dist';
 
 #------------------------------------------------------------------------------
+# Try a formatted listing, of packages matching 'Foo' only
+
+$params = {format => '%a %N', packages => 'Foo'};
+$response = dancer_response( POST => '/action/list', {params => $params} );
+is $response->{status}, 200, 'Formatted List action was successful';
+is $response->{content}, 'ME Foo-0.02', 'Formatted listing is correct';
+
+#------------------------------------------------------------------------------
 # Adding the same dist again should cause a Pinto exception
 
 $params = {author => 'YOU'};
@@ -119,6 +127,13 @@ is $response->{content}, '', 'listing is now empty';
 $response = dancer_response( POST => '/action/nop' );
 is $response->{status}, 200, 'Nop action was successful';
 is $response->{content}, '', 'output was empty';
+
+#------------------------------------------------------------------------------
+# Pinger
+
+$response = dancer_response( get => '/' );
+is $response->{status}, 200, 'Ping was successful';
+is $response->{content}, 'Pinto::Server 0.027 OK', 'Correct output';
 
 #------------------------------------------------------------------------------
 # Test server exceptions
