@@ -112,6 +112,14 @@ post '/action/nop' => sub {
 };
 
 #----------------------------------------------------------------------------
+
+get version => sub {
+
+    status 200;
+    return pinto()->VERSION();
+};
+
+#----------------------------------------------------------------------------
 # Route for indexes and dists
 
 get qr{^ /(authors|modules)/(.+) }x => sub {
