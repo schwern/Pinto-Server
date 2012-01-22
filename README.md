@@ -4,7 +4,7 @@ Pinto::Server - Web interface to a Pinto repository
 
 # VERSION
 
-version 0.028
+version 0.029
 
 # DESCRIPTION
 
@@ -18,10 +18,11 @@ See [Pinto::Manual](http://search.cpan.org/perldoc?Pinto::Manual) for a complete
 
 # ATTRIBUTES
 
-## repos
+## root
 
-The path to your Pinto repository.  The repository must already exist
-at this location.  This attribute is required.
+The path to the root directory of your Pinto repository.  The
+repository must already exist at this location.  This attribute is
+required.
 
 ## port
 

@@ -17,13 +17,13 @@ use Test::More;
 # Create a repository
 
 my $t     = Pinto::Tester->new();
-my $repos = $t->root_dir();
 my $pinto = $t->pinto();
+my $root  = $pinto->root();
 
 #------------------------------------------------------------------------------
 # Setup the server
 
-Dancer::set(repos => $repos);
+Dancer::set(root => $root);
 
 #------------------------------------------------------------------------------
 # Get a distribution to play with.  Dancer::Test::dancer_response() does not
