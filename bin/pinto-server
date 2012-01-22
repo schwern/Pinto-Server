@@ -20,8 +20,8 @@ use Pinto::Server;
 my @opt_spec = qw(daemon port=i root|r=s);
 GetOptions(\my %opts, @opt_spec) or pod2usage();
 
-$opts{repos} ||= $ENV{PINTO_REPOSITORY};
-pod2usage(-message => 'Must specify a repository') if not $opts{repos};
+$opts{root} ||= $ENV{PINTO_REPOSITORY_ROOT};
+pod2usage(-message => 'Must specify a repository root') if not $opts{root};
 
 Pinto::Server->new(%opts)->run();
 
