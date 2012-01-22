@@ -75,7 +75,7 @@ Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
 sub run {
     my ($self) = @_;
 
-    Dancer::set( repos  => $self->repos()  );
+    Dancer::set( root   => $self->root()  );
     Dancer::set( port   => $self->port()   );
     Dancer::set( daemon => $self->daemon() );
 
@@ -90,8 +90,8 @@ sub _initialize {
 
     ## no critic qw(Carping)
 
-    my $repos = $self->repos();
-    print "Initializing pinto at '$repos' ... ";
+    my $root = $self->root();
+    print "Initializing pinto repository at '$root' ... ";
     my $pinto = eval { Pinto::Server::Routes::pinto() };
     print "\n" and die "$@" if not $pinto;
 

@@ -168,7 +168,7 @@ post '/action/statistics' => sub {
 # Route for indexes and dists
 
 get qr{^ /(authors|modules)/(.+) }x => sub {
-     my $file =  file( setting('repos'), request->uri() );
+     my $file =  file( setting('root'), request->uri() );
      status 404 and return "Not found\n" if not -e $file;
      return send_file( $file, system_path => 1 );
 };
