@@ -20,14 +20,15 @@ use Dancer qw(:moose :script);
 
 #-----------------------------------------------------------------------------
 
-=attr repos
+=attr root
 
-The path to your Pinto repository.  The repository must already exist
-at this location.  This attribute is required.
+The path to the root directory of your Pinto repository.  The
+repository must already exist at this location.  This attribute is
+required.
 
 =cut
 
-has repos => (
+has root => (
     is       => 'ro',
     isa      => Dir,
     coerce   => 1,

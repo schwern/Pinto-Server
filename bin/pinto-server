@@ -17,7 +17,7 @@ use Pinto::Server;
 
 #-----------------------------------------------------------------------------
 
-my @opt_spec = qw(daemon port=i repos|r=s);
+my @opt_spec = qw(daemon port=i root|r=s);
 GetOptions(\my %opts, @opt_spec) or pod2usage();
 
 $opts{repos} ||= $ENV{PINTO_REPOSITORY};
@@ -31,7 +31,7 @@ __END__
 
 =head1 SYNOPSIS
 
-  pinto-server --repos=/path/to/repository [--daemon] [--port=N]
+  pinto-server --root=/path/to/repository [--daemon] [--port=N]
 
 =head1 DESCRIPTION
 
@@ -48,9 +48,10 @@ you can use it as the source of distributions for L<cpan> or L<cpanm>.
 
 =over 4
 
-=item --repos=PATH
+=item --root=PATH
 
-The path to the Pinto repository you wish to serve.
+The path to the root directory of the Pinto repository you wish to
+serve.
 
 =back
 

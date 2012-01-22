@@ -22,7 +22,7 @@ Returns a new L<Pinto> object that is configured for this Server.
 
 =cut
 
-sub pinto { return Pinto->new(root_dir => setting('repos'), quiet => 1) }
+sub pinto { return Pinto->new(root => setting('root'), quiet => 1) }
 
 #----------------------------------------------------------------------------
 
