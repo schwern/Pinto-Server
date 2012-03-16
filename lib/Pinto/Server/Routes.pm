@@ -34,6 +34,8 @@ post '/action/add' => sub {
     my $archive = upload('archive')
       or (status 500 and return 'No archive supplied');
 
+    my $norecurse = param('norecurse');
+
     # TODO: if $archive is a url, don't copy.  Just
     # pass it through and let Pinto fetch it for us.
     my $tempdir = dir( File::Temp::tempdir(CLEANUP=>1) );
@@ -42,7 +44,11 @@ post '/action/add' => sub {
 
     my $pinto = pinto();
     $pinto->new_batch(noinit => 1, _get_batch_args());
-    $pinto->add_action('Add', archive => $temp_archive, author => $author);
+    $pinto->add_action('Add',
+        archive     => $temp_archive,
+        author      => $author,
+        norecurse   => $norecurse,
+    );
     my $result = eval { $pinto->run_actions() };
 
     status 500 and return $@ if $@;
