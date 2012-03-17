@@ -38,8 +38,8 @@ post '/action/add' => sub {
 
     # TODO: if $archive is a url, don't copy.  Just
     # pass it through and let Pinto fetch it for us.
-    my $tempdir = dir( File::Temp::tempdir(CLEANUP=>1) );
-    my $temp_archive = $tempdir->file( $archive->basename() );
+    my $temp_dir = File::Temp->newdir(); # Deleted on DESTROY
+    my $temp_archive = file( $temp_dir, $archive->basename() );
     $archive->copy_to( $temp_archive );
 
     my $pinto = pinto();
