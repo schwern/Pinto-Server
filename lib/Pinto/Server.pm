@@ -5,9 +5,6 @@ package Pinto::Server;
 use Moose;
 use MooseX::Types::Moose qw(Int Bool);
 
-use Path::Class;
-use File::Temp;
-
 use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Server::Routes;
