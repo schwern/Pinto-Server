@@ -54,7 +54,7 @@ is $response->{content}, '', 'listing is empty';
 
 $params = {author => 'ME'};
 $files = [ {filename => $dist_file, name => 'archive' } ];
-$response = Dancer::Test::dancer_response( POST => '/action/add', {params => $params, files => $files} );
+$response = dancer_response( POST => '/action/add', {params => $params, files => $files} );
 is $response->{status}, 200, 'add action was successful';
 is $response->{content}, '', 'response is empty';
 
@@ -87,14 +87,14 @@ is $response->{content}, '', 'Listing is empty for bogus distribution';
 
 $params = {author => 'YOU'};
 $files = [ {filename => $dist_file, name => 'archive'} ];
-$response = Dancer::Test::dancer_response( POST => '/action/add', {params => $params, files => $files} );
+$response = dancer_response( POST => '/action/add', {params => $params, files => $files} );
 is $response->{status}, 500, 'add action failed';
 like $response->{content}, qr/Only author ME can update/, 'response has exception';
 
 #------------------------------------------------------------------------------
 # Check the statistics
 
-$response = Dancer::Test::dancer_response( POST => '/action/statistics', {});
+$response = dancer_response( POST => '/action/statistics', {});
 is $response->{status}, 200, 'Statistics action was successful';
 like $response->{content}, qr/Distributions \s* 1 \s* 1/, 'Correct dist stats';
 like $response->{content}, qr/Packages \s* 1 \s* 1/, 'Correct pkg stats';
@@ -103,14 +103,14 @@ like $response->{content}, qr/Packages \s* 1 \s* 1/, 'Correct pkg stats';
 # Try pinning
 
 $params = {package => 'Foo'};
-$response = Dancer::Test::dancer_response( POST => '/action/pin', {params => $params});
+$response = dancer_response( POST => '/action/pin', {params => $params});
 is $response->{status}, 200, 'Pin action was successful';
 
 #------------------------------------------------------------------------------
 # Try unpinning
 
 $params = {package => 'Foo'};
-$response = Dancer::Test::dancer_response( POST => '/action/unpin', {params => $params});
+$response = dancer_response( POST => '/action/unpin', {params => $params});
 is $response->{status}, 200, 'Unpin action was successful';
 
 #------------------------------------------------------------------------------
