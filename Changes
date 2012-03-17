@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.033     2012-03-17 00:59:47 America/Los_Angeles
+
     Support the --norecurse option in the add command (Karen
     Etheridge) which also requires Pinto-0.033 or newer.
 
