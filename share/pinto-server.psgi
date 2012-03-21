@@ -6,22 +6,23 @@ use warnings;
 use Plack::Builder;
 use Pinto::Server;
 use Class::Load 'load_class';
+use YAML::Any 'LoadFile';
+
+# get opts out of the config file.
+my $opts = LoadFile($ENV{PINTO_SERVER_CONFIGFILE});
+unlink $ENV{PINTO_SERVER_CONFIGFILE};
 
 my $app = sub {
     my $env = shift;
 
-    # get opts out of %ENV.  This is kinda gross, but the PSGI specs say that
-    # @ARGV is no longer available in the $app.
-    my %opts = %{$ENV{PINTO_SERVER_OPTS}};
-
-    Pinto::Server->new(%opts)->run($env);
+    Pinto::Server->new(%$opts)->run($env);
 };
 
 builder {
 
-    if (exists $ENV{PINTO_SERVER_OPTS}{auth})
+    if (exists $opts->{auth})
     {
-        my %auth_options = %{$ENV{PINTO_SERVER_OPTS}{auth}};
+        my %auth_options = %{$opts->{auth}};
 
         my $backend = delete $auth_options{backend} or die 'No auth backend provided!';
         print "Authenticating using the $backend backend...\n";

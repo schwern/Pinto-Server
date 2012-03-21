@@ -8,6 +8,8 @@ use warnings;
 
 use Pod::Usage;
 use Getopt::Long qw(:config pass_through);  # keeps unrecognized options in
+use File::Temp 'tempfile';
+use YAML::Any 'DumpFile';
 use File::ShareDir;
 use Plack::Util;
 use Plack::Runner;
@@ -18,9 +20,12 @@ GetOptions(\my %opts, @opt_spec) or pod2usage();
 $opts{root} ||= $ENV{PINTO_REPOSITORY_ROOT};
 pod2usage(-message => 'Must specify a repository root') if not $opts{root};
 
-# stuff options into %ENV for the psgi to extract
-$ENV{PINTO_SERVER_OPTS} = \%opts;
+# store options into a temp file for the psgi to use
+my (undef, $psgi_configfile) = tempfile('pinto-server-config-XXXX',
+    TMPDIR => 1, SUFFIX => '.yml', OPEN => 0);
+DumpFile($psgi_configfile, \%opts);
 
+$ENV{PINTO_SERVER_CONFIGFILE} = $psgi_configfile;
 
 my $runner = Plack::Runner->new;
 
@@ -129,8 +134,10 @@ However, this may not perform well under heavy load. Since the .psgi file is
 available, so you can run it under an arbitrary backend like this:
 
     my $psgi = File::ShareDir::dist_file('Pinto-Server', 'pinto-server.psgi');
-    system("$backend @opts $psgi");
+    system("$backend @extra_opts $psgi");
 
+pinto-server configuration options are read in from the filename in
+the C<PINTO_SERVER_CONFIGFILE> environment variable, in YAML format.
 
 =head1 CAVEATS
 
