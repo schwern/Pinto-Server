@@ -7,23 +7,34 @@ use strict;
 use warnings;
 
 use Pod::Usage;
-use Getopt::Long;
+use Getopt::Long qw(:config pass_through);  # keeps unrecognized options in
+use File::ShareDir;
+use Plack::Runner;
 
-use Pinto::Server;
-
-#-----------------------------------------------------------------------------
-
-# VERSION
-
-#-----------------------------------------------------------------------------
-
-my @opt_spec = qw(daemon port=i root|r=s);
+my @opt_spec = qw(root|r=s);
 GetOptions(\my %opts, @opt_spec) or pod2usage();
 
 $opts{root} ||= $ENV{PINTO_REPOSITORY_ROOT};
 pod2usage(-message => 'Must specify a repository root') if not $opts{root};
 
-Pinto::Server->new(%opts)->run();
+# stuff options into %ENV for the psgi to extract
+$ENV{PINTO_SERVER_OPTS} = \%opts;
+
+
+my $runner = Plack::Runner->new;
+
+# We get some options for free from Plack::Runner, e.g. port, daemon,
+# access-log.
+$runner->parse_options(@ARGV);
+$runner->{port} ||= 3000;
+
+my $psgi = eval { File::ShareDir::dist_file('Pinto-Server', 'pinto-server.psgi') }
+    || shift @{$runner->{argv}};
+die 'Cannot find pinto-server.psgi!' if not $psgi;
+
+$runner->{app} = $psgi;
+$runner->run;
+
 
 #----------------------------------------------------------------------------
 

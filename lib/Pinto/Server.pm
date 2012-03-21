@@ -9,6 +9,8 @@ use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Server::Routes;
 
+use Path::Class;    # exports dir, file
+use Plack::Builder;
 use Dancer qw(:moose :script);
 
 #-----------------------------------------------------------------------------
@@ -34,35 +36,6 @@ has root => (
 
 #-----------------------------------------------------------------------------
 
-=attr port
-
-The port number the server shall listen on.  The default is 3000.
-
-=cut
-
-has port => (
-    is       => 'ro',
-    isa      => Int,
-    default  => 3000,
-);
-
-#-----------------------------------------------------------------------------
-
-=attr daemon
-
-If true, Pinto::Server will fork and run in a separate process.
-Default is false.
-
-=cut
-
-has daemon => (
-    is       => 'ro',
-    isa      => Bool,
-    default  => 0,
-);
-
-#-----------------------------------------------------------------------------
-
 =method run()
 
 Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
@@ -70,17 +43,18 @@ Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
 =cut
 
 sub run {
-    my ($self) = @_;
+    my ($self, $env) = @_;
 
     Dancer::set( root   => $self->root()  );
-    Dancer::set( port   => $self->port()   );
-    Dancer::set( daemon => $self->daemon() );
 
     $self->_initialize();
-    return Dancer::dance();
+
+    my $request = Dancer::Request->new(env => $env);
+    Dancer->dance($request);
 }
 
 #-----------------------------------------------------------------------------
+
 
 sub _initialize {
     my ($self) = @_;
