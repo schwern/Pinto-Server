@@ -5,6 +5,7 @@ use warnings;
 
 use Plack::Builder;
 use Pinto::Server;
+use Class::Load 'load_class';
 
 my $app = sub {
     my $env = shift;
@@ -18,7 +19,18 @@ my $app = sub {
 
 builder {
 
-    # TODO: add middleware here - from $ENV{PINTO_SERVER_OPTS} as needed.
+    if (exists $ENV{PINTO_SERVER_OPTS}{auth})
+    {
+        my %auth_options = %{$ENV{PINTO_SERVER_OPTS}{auth}};
+
+        my $backend = delete $auth_options{backend} or die 'No auth backend provided!';
+        print "Authenticating using the $backend backend...\n";
+        my $class = 'Authen::Simple::' . $backend;
+        load_class $class;
+
+        enable 'Auth::Basic', authenticator => $class->new(%auth_options);
+    }
+
     $app;
 };
 

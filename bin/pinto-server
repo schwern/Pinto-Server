@@ -12,7 +12,7 @@ use File::ShareDir;
 use Plack::Util;
 use Plack::Runner;
 
-my @opt_spec = qw(root|r=s);
+my @opt_spec = qw(root|r=s auth=s%);
 GetOptions(\my %opts, @opt_spec) or pod2usage();
 
 $opts{root} ||= $ENV{PINTO_REPOSITORY_ROOT};
@@ -74,6 +74,27 @@ serve.
 =item --port=N
 
 Sets the port number for the server to listen on.  Default is 3000.
+
+=item --auth
+
+Indicates the an option describing the authentication scheme to use
+(default is no authentication).  Each time this is used, a key=value pair must
+follow; one of them must be 'backend', which should correspond to a class in
+the L<Authen::Simple> namespace, e.g. backend=Kerberos would indicate that
+Kerberos authentication will be used, with the L<Authen::Simple::Kerberos>
+backend.
+
+Options that follow will be passed as-is to the authentication backend.
+
+For example, this would be a valid configuration for Kerberos:
+
+  --auth backend=Kerberos --auth realm=REALM.COMPANY.COM
+
+and this is how the authentication backend will be constructed:
+
+  my $auth = Authen::Simple::Kerberos->new(
+    realm => 'REALM.COMPANY.COM'
+  );
 
 =item other options
 
