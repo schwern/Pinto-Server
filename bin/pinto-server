@@ -14,6 +14,12 @@ use File::ShareDir;
 use Plack::Util;
 use Plack::Runner;
 
+#-----------------------------------------------------------------------------
+
+# VERSION
+
+#-----------------------------------------------------------------------------
+
 my @opt_spec = qw(root|r=s auth=s%);
 GetOptions(\my %opts, @opt_spec) or pod2usage();
 
