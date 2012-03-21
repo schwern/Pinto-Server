@@ -30,7 +30,7 @@ $runner->{port} ||= 3000;
 
 my $psgi = eval { File::ShareDir::dist_file('Pinto-Server', 'pinto-server.psgi') }
     || shift @{$runner->{argv}};
-die 'Cannot find pinto-server.psgi!' if not $psgi;
+die 'Cannot find pinto-server.psgi!' if not $psgi or not -e $psgi;
 
 $runner->{app} = $psgi;
 $runner->run;
