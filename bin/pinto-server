@@ -103,13 +103,12 @@ This version of C<pinto-server> supports the following actions:
 
 =head1 DEPLOYMENT
 
-C<pinto-server> can be run as a stand-alone server as shown in the
-L</SYNOPSIS>.  However, this may not perform well under heavy load.
+C<pinto-server> is PSGI compatible, running under L<Plack::Runner> by default.
+However, this may not perform well under heavy load. Since the .psgi file is
+available, so you can run it under an arbitrary backend like this:
 
-C<pinto-server> is also PSGI compatible, so if you need a more
-powerful robust server, you can run it under L<Plack> like this:
-
-  $> plackup [OPTIONS] /path/to/pinto-server
+    my $psgi = File::ShareDir::dist_file('Pinto-Server', 'pinto-server.psgi');
+    system("$backend @opts $psgi");
 
 
 =head1 CAVEATS
