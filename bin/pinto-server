@@ -70,13 +70,13 @@ serve.
 
 =over 4
 
-=item --daemon
-
-Tells C<pinto-server> to fork and run in a separate process.
-
 =item --port=N
 
 Sets the port number for the server to listen on.  Default is 3000.
+
+=item other options
+
+All other options supported by L<plackup> are supported here, e.g. --daemon.
 
 =back
 
