@@ -8,6 +8,8 @@ use Pinto::Types qw(Dir);
 use Pinto::Server::Routes;
 
 use Dancer qw(:moose :script);
+use Class::Load 'load_class';
+use Plack::Middleware::Auth::Basic;
 
 #-----------------------------------------------------------------------------
 
@@ -30,6 +32,15 @@ has root => (
     required => 1,
 );
 
+has auth => (
+    isa     => 'HashRef',
+    traits  => ['Hash'],
+    handles => {
+        auth_options => 'elements',
+    },
+);
+
+
 #-----------------------------------------------------------------------------
 
 =method to_app()
@@ -41,13 +52,27 @@ Returns a PSGI-compatible code reference to start the server.
 sub to_app
 {
     my $self = shift;
+
     $self->prepare_app;
-    return sub { $self->call(@_) };
+    my $app = sub { $self->call(@_) };
+
+    if (my %auth_options = $self->auth_options)
+    {
+        my $backend = delete $auth_options{backend} or die 'No auth backend provided!';
+        print "Authenticating using the $backend backend...\n";
+        my $class = 'Authen::Simple::' . $backend;
+        load_class $class;
+
+        $app = Plack::Middleware::Auth::Basic->wrap($app,
+            authenticator => $class->new(%auth_options));
+    }
+
+    return $app;
 }
 
 =method run()
 
-Starts the Pinto::Server.
+Handles one request to the server.
 
 =cut
 
