@@ -8,11 +8,8 @@ use warnings;
 
 use Pod::Usage;
 use Getopt::Long qw(:config pass_through);  # keeps unrecognized options in
-use File::Temp 'tempfile';
-use YAML::Any 'DumpFile';
-use File::ShareDir;
-use Plack::Util;
 use Plack::Runner;
+use Pinto::Server;
 
 #-----------------------------------------------------------------------------
 
@@ -26,13 +23,6 @@ GetOptions(\my %opts, @opt_spec) or pod2usage();
 $opts{root} ||= $ENV{PINTO_REPOSITORY_ROOT};
 pod2usage(-message => 'Must specify a repository root') if not $opts{root};
 
-# store options into a temp file for the psgi to use
-my (undef, $psgi_configfile) = tempfile('pinto-server-config-XXXX',
-    TMPDIR => 1, SUFFIX => '.yml', OPEN => 0);
-DumpFile($psgi_configfile, \%opts);
-
-$ENV{PINTO_SERVER_CONFIGFILE} = $psgi_configfile;
-
 my $runner = Plack::Runner->new;
 
 # We get some options for free from Plack::Runner, e.g. port, daemon,
@@ -40,11 +30,9 @@ my $runner = Plack::Runner->new;
 $runner->parse_options(@ARGV);
 $runner->{port} ||= 3000;
 
-my $psgi = eval { File::ShareDir::dist_file('Pinto-Server', 'pinto-server.psgi') }
-    || pop @{$runner->{argv}};
-die 'Cannot find pinto-server.psgi!' if not $psgi or not -e $psgi;
+my $server = Pinto::Server->new(%opts);
+my $app = $server->to_app;
 
-my $app = Plack::Util::load_psgi($psgi);
 $runner->run($app);
 
 
@@ -139,11 +127,11 @@ C<pinto-server> is PSGI compatible, running under L<Plack::Runner> by default.
 However, this may not perform well under heavy load. Since the .psgi file is
 available, so you can run it under an arbitrary backend like this:
 
-    my $psgi = File::ShareDir::dist_file('Pinto-Server', 'pinto-server.psgi');
-    system("$backend @extra_opts $psgi");
+    my $server = Pinto::Server->new(%$opts);
+    my $app = $server->to_app;
 
-pinto-server configuration options are read in from the filename in
-the C<PINTO_SERVER_CONFIGFILE> environment variable, in YAML format.
+    # insert code customized for your backend
+    # which operates on the $app
 
 =head1 CAVEATS
 
