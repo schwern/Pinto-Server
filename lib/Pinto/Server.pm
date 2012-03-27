@@ -41,19 +41,22 @@ Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
 sub run {
     my ($self, $env) = @_;
 
-    Dancer::set( root   => $self->root()  );
-
-    $self->_initialize();
-
     my $request = Dancer::Request->new(env => $env);
     Dancer->dance($request);
 }
 
 #-----------------------------------------------------------------------------
 
+sub BUILD
+{
+    my ($self) = @_;
+    $self->_initialize;
+}
 
 sub _initialize {
     my ($self) = @_;
+
+    Dancer::set( root   => $self->root()  );
 
     ## no critic qw(Carping)
 

@@ -21,7 +21,8 @@ unlink $ENV{PINTO_SERVER_CONFIGFILE};
 my $app = sub {
     my $env = shift;
 
-    Pinto::Server->new(%$opts)->run($env);
+    my $server = Pinto::Server->new(%$opts);
+    $server->run($env);
 };
 
 builder {
