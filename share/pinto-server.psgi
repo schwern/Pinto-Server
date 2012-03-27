@@ -18,12 +18,9 @@ use YAML::Any 'LoadFile';
 my $opts = LoadFile($ENV{PINTO_SERVER_CONFIGFILE});
 unlink $ENV{PINTO_SERVER_CONFIGFILE};
 
-my $app = sub {
-    my $env = shift;
+my $server = Pinto::Server->new(%$opts);
+my $app = $server->to_app;
 
-    my $server = Pinto::Server->new(%$opts);
-    $server->run($env);
-};
 
 builder {
 

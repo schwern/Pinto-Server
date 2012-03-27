@@ -32,11 +32,26 @@ has root => (
 
 #-----------------------------------------------------------------------------
 
-=method run()
+=method to_app()
 
-Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
+Returns a PSGI-compatible code reference to start the server.
 
 =cut
+
+sub to_app
+{
+    my $self = shift;
+    $self->prepare_app;
+    return sub { $self->call(@_) };
+}
+
+=method run()
+
+Starts the Pinto::Server.
+
+=cut
+
+sub call { goto &run }
 
 sub run {
     my ($self, $env) = @_;
@@ -47,11 +62,7 @@ sub run {
 
 #-----------------------------------------------------------------------------
 
-sub BUILD
-{
-    my ($self) = @_;
-    $self->_initialize;
-}
+sub prepare_app { goto &_initialize }
 
 sub _initialize {
     my ($self) = @_;
