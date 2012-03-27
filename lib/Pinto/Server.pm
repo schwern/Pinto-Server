@@ -3,14 +3,10 @@ package Pinto::Server;
 # ABSTRACT: Web interface to a Pinto repository
 
 use Moose;
-use MooseX::Types::Moose qw(Int Bool);
 
-use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Server::Routes;
 
-use Path::Class;    # exports dir, file
-use Plack::Builder;
 use Dancer qw(:moose :script);
 
 #-----------------------------------------------------------------------------
