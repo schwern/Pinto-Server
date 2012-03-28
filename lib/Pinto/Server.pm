@@ -3,13 +3,13 @@ package Pinto::Server;
 # ABSTRACT: Web interface to a Pinto repository
 
 use Moose;
-use MooseX::Types::Moose qw(Int Bool);
 
-use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Server::Routes;
 
 use Dancer qw(:moose :script);
+use Class::Load 'load_class';
+use Plack::Middleware::Auth::Basic;
 
 #-----------------------------------------------------------------------------
 
@@ -32,58 +32,76 @@ has root => (
     required => 1,
 );
 
-#-----------------------------------------------------------------------------
+=attr auth
 
-=attr port
-
-The port number the server shall listen on.  The default is 3000.
-
-=cut
-
-has port => (
-    is       => 'ro',
-    isa      => Int,
-    default  => 3000,
-);
-
-#-----------------------------------------------------------------------------
-
-=attr daemon
-
-If true, Pinto::Server will fork and run in a separate process.
-Default is false.
+The hashref of authentication options, if authentication is to be used within
+the server. One of the options must be 'backend', to specify which
+Authen::Simple:: class to use; the other key/value pairs will be passed as-is
+to the Authen::Simple class.
 
 =cut
 
-has daemon => (
-    is       => 'ro',
-    isa      => Bool,
-    default  => 0,
+has auth => (
+    isa     => 'HashRef',
+    traits  => ['Hash'],
+    handles => {
+        auth_options => 'elements',
+    },
 );
 
+
 #-----------------------------------------------------------------------------
+
+=method to_app()
+
+Returns a PSGI-compatible code reference to start the server.
+
+=cut
+
+sub to_app
+{
+    my $self = shift;
+
+    $self->prepare_app;
+    my $app = sub { $self->call(@_) };
+
+    if (my %auth_options = $self->auth_options)
+    {
+        my $backend = delete $auth_options{backend} or die 'No auth backend provided!';
+        print "Authenticating using the $backend backend...\n";
+        my $class = 'Authen::Simple::' . $backend;
+        load_class $class;
+
+        $app = Plack::Middleware::Auth::Basic->wrap($app,
+            authenticator => $class->new(%auth_options));
+    }
+
+    return $app;
+}
 
 =method run()
 
-Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
+Handles one request to the server.
 
 =cut
 
+sub call { goto &run }
+
 sub run {
-    my ($self) = @_;
+    my ($self, $env) = @_;
 
-    Dancer::set( root   => $self->root()  );
-    Dancer::set( port   => $self->port()   );
-    Dancer::set( daemon => $self->daemon() );
-
-    $self->_initialize();
-    return Dancer::dance();
+    my $request = Dancer::Request->new(env => $env);
+    Dancer->dance($request);
 }
 
 #-----------------------------------------------------------------------------
 
+sub prepare_app { goto &_initialize }
+
 sub _initialize {
     my ($self) = @_;
+
+    Dancer::set( root   => $self->root()  );
 
     ## no critic qw(Carping)
 

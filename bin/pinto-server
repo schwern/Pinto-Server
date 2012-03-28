@@ -7,8 +7,8 @@ use strict;
 use warnings;
 
 use Pod::Usage;
-use Getopt::Long;
-
+use Getopt::Long qw(:config pass_through);  # keeps unrecognized options in
+use Plack::Runner;
 use Pinto::Server;
 
 #-----------------------------------------------------------------------------
@@ -17,13 +17,24 @@ use Pinto::Server;
 
 #-----------------------------------------------------------------------------
 
-my @opt_spec = qw(daemon port=i root|r=s);
+my @opt_spec = qw(root|r=s auth=s%);
 GetOptions(\my %opts, @opt_spec) or pod2usage();
 
 $opts{root} ||= $ENV{PINTO_REPOSITORY_ROOT};
 pod2usage(-message => 'Must specify a repository root') if not $opts{root};
 
-Pinto::Server->new(%opts)->run();
+my $runner = Plack::Runner->new;
+
+# We get some options for free from Plack::Runner, e.g. port, daemon,
+# access-log.
+$runner->parse_options(@ARGV);
+$runner->{port} ||= 3000;
+
+my $server = Pinto::Server->new(%opts);
+my $app = $server->to_app;
+
+$runner->run($app);
+
 
 #----------------------------------------------------------------------------
 
@@ -59,13 +70,34 @@ serve.
 
 =over 4
 
-=item --daemon
-
-Tells C<pinto-server> to fork and run in a separate process.
-
 =item --port=N
 
 Sets the port number for the server to listen on.  Default is 3000.
+
+=item --auth
+
+Indicates the an option describing the authentication scheme to use
+(default is no authentication).  Each time this is used, a key=value pair must
+follow; one of them must be 'backend', which should correspond to a class in
+the L<Authen::Simple> namespace, e.g. backend=Kerberos would indicate that
+Kerberos authentication will be used, with the L<Authen::Simple::Kerberos>
+backend.
+
+Options that follow will be passed as-is to the authentication backend.
+
+For example, this would be a valid configuration for Kerberos:
+
+  --auth backend=Kerberos --auth realm=REALM.COMPANY.COM
+
+and this is how the authentication backend will be constructed:
+
+  my $auth = Authen::Simple::Kerberos->new(
+    realm => 'REALM.COMPANY.COM'
+  );
+
+=item other options
+
+All other options supported by L<plackup> are supported here, e.g. --daemon.
 
 =back
 
@@ -91,14 +123,15 @@ This version of C<pinto-server> supports the following actions:
 
 =head1 DEPLOYMENT
 
-C<pinto-server> can be run as a stand-alone server as shown in the
-L</SYNOPSIS>.  However, this may not perform well under heavy load.
+C<pinto-server> is PSGI compatible, running under L<Plack::Runner> by default.
+However, this may not perform well under heavy load. Since the .psgi file is
+available, so you can run it under an arbitrary backend like this:
 
-C<pinto-server> is also PSGI compatible, so if you need a more
-powerful robust server, you can run it under L<Plack> like this:
+    my $server = Pinto::Server->new(%$opts);
+    my $app = $server->to_app;
 
-  $> plackup [OPTIONS] /path/to/pinto-server
-
+    # insert code customized for your backend
+    # which operates on the $app
 
 =head1 CAVEATS
 
