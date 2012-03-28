@@ -31,6 +31,11 @@ the server. One of the options must be 'backend', to specify which
 Authen::Simple:: class to use; the other key/value pairs will be passed as-is
 to the Authen::Simple class.
 
+## default_port
+
+Returns the default port number that the server will listen on.  This
+is a class attribute.
+
 # METHODS
 
 ## to_app()

@@ -4,15 +4,16 @@ package Pinto::Server;
 
 use Moose;
 
-use MooseX::Types::Moose qw(HashRef);
-use Pinto::Types qw(Dir);
+use MooseX::ClassAttribute;
+use MooseX::Types::Moose qw(Int HashRef);
 
 use Carp;
 use Dancer qw(:moose :script);
-use Class::Load 'load_class';
+use Class::Load qw(load_class);
 use Plack::Middleware::Auth::Basic;
 
 use Pinto::Server::Routes;
+use Pinto::Types qw(Dir);
 
 #-----------------------------------------------------------------------------
 
@@ -51,6 +52,18 @@ has auth => (
     handles => { auth_options => 'elements' },
 );
 
+=attr default_port
+
+Returns the default port number that the server will listen on.  This
+is a class attribute.
+
+=cut
+
+class_has default_port => (
+    is       => 'ro',
+    isa      => Int,
+    default  => 3000,
+);
 
 #-----------------------------------------------------------------------------
 # Methods

@@ -28,10 +28,10 @@ my $runner = Plack::Runner->new;
 # We get some options for free from Plack::Runner, e.g. port, daemon,
 # access-log.
 $runner->parse_options(@ARGV);
-$runner->{port} ||= 3000;
+$runner->{port} ||= Pinto::Server->default_port();
 
 my $server = Pinto::Server->new(%opts);
-my $app = $server->to_app;
+my $app    = $server->to_app;
 
 $runner->run($app);
 
