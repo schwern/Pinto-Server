@@ -1,5 +1,13 @@
 {{$NEXT}}
 
+    New Features:
+
+    pinto-server can now be configured to require authentication.
+    Authentication can be done using any of the Authen::Simple
+    modules.  See the POD for details.  If you use this feature, then
+    you'll also need to use a version of pinto-remote that
+    supports authentication.  (Karen Etheridge)
+
 0.034     2012-03-17 08:47:01 America/Los_Angeles
 
     Bug Fixes:
