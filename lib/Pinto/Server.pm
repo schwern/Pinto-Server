@@ -4,12 +4,15 @@ package Pinto::Server;
 
 use Moose;
 
+use MooseX::Types::Moose qw(HashRef);
 use Pinto::Types qw(Dir);
-use Pinto::Server::Routes;
 
+use Carp;
 use Dancer qw(:moose :script);
 use Class::Load 'load_class';
 use Plack::Middleware::Auth::Basic;
+
+use Pinto::Server::Routes;
 
 #-----------------------------------------------------------------------------
 
@@ -42,15 +45,15 @@ to the Authen::Simple class.
 =cut
 
 has auth => (
-    isa     => 'HashRef',
+    is      => 'ro',
+    isa     => HashRef,
     traits  => ['Hash'],
-    handles => {
-        auth_options => 'elements',
-    },
+    handles => { auth_options => 'elements' },
 );
 
 
 #-----------------------------------------------------------------------------
+# Methods
 
 =method to_app()
 
@@ -58,57 +61,62 @@ Returns a PSGI-compatible code reference to start the server.
 
 =cut
 
-sub to_app
-{
+sub to_app {
     my $self = shift;
 
     $self->prepare_app;
     my $app = sub { $self->call(@_) };
 
-    if (my %auth_options = $self->auth_options)
-    {
-        my $backend = delete $auth_options{backend} or die 'No auth backend provided!';
+    if (my %auth_options = $self->auth_options) {
+
+        my $backend = delete $auth_options{backend}
+          or carp 'No auth backend provided!';
+
         print "Authenticating using the $backend backend...\n";
         my $class = 'Authen::Simple::' . $backend;
         load_class $class;
 
         $app = Plack::Middleware::Auth::Basic->wrap($app,
-            authenticator => $class->new(%auth_options));
+            authenticator => $class->new(%auth_options) );
     }
 
     return $app;
 }
 
-=method run()
+#-----------------------------------------------------------------------------
+
+=method call($request)
 
 Handles one request to the server.
 
 =cut
 
-sub call { goto &run }
-
-sub run {
+sub call {
     my ($self, $env) = @_;
 
-    my $request = Dancer::Request->new(env => $env);
-    Dancer->dance($request);
+    my $request  = Dancer::Request->new(env => $env);
+    my $response = Dancer->dance($request);
+
+    return $response;
 }
 
 #-----------------------------------------------------------------------------
 
-sub prepare_app { goto &_initialize }
+=method prepare_app()
 
-sub _initialize {
+Initialize the server.
+
+=cut
+
+sub prepare_app {
     my ($self) = @_;
 
     Dancer::set( root   => $self->root()  );
 
-    ## no critic qw(Carping)
-
     my $root = $self->root();
     print "Initializing pinto repository at '$root' ... ";
     my $pinto = eval { Pinto::Server::Routes::pinto() };
-    print "\n" and die "$@" if not $pinto;
+    print "\n" and carp "$@" if not $pinto;
 
     $pinto->new_batch(noinit => 0);
     $pinto->add_action('Nop');
