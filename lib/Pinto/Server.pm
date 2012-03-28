@@ -1,123 +1,107 @@
-package Pinto::Server;
-
 # ABSTRACT: Web interface to a Pinto repository
 
+package Pinto::Server;
+
 use Moose;
-use MooseX::Types::Moose qw(Int Bool);
-
-use Pinto;
 use Pinto::Types qw(Dir);
-use Pinto::Server::Routes;
 
-use Dancer qw(:moose :script);
+use Carp;
+use Pinto;
+use Path::Class;
+use HTTP::Engine;
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 # VERSION
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-=attr root
-
-The path to the root directory of your Pinto repository.  The
-repository must already exist at this location.  This attribute is
-required.
-
-=cut
-
-has root => (
-    is       => 'ro',
-    isa      => Dir,
-    coerce   => 1,
-    required => 1,
+has root  => (
+   is       => 'ro',
+   isa      => Dir,
+   required => 1,
+   coerce   => 1,
 );
 
-#-----------------------------------------------------------------------------
 
-=attr port
-
-The port number the server shall listen on.  The default is 3000.
-
-=cut
-
-has port => (
-    is       => 'ro',
-    isa      => Int,
-    default  => 3000,
+has engine => (
+   is         => 'ro',
+   isa        => 'HTTP::Engine',
+   lazy_build => 1,
 );
 
-#-----------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
-=attr daemon
+sub _build_engine {
+    my ($self) = @_;
 
-If true, Pinto::Server will fork and run in a separate process.
-Default is false.
+    my $handler   = sub { $self->handle_request(@_) };
+    my $interface = {module => 'PSGI', request_handler => $handler};
+    my $engine    = HTTP::Engine->new(interface => $interface);
 
-=cut
+    return $engine;
+}
 
-has daemon => (
-    is       => 'ro',
-    isa      => Bool,
-    default  => 0,
-);
+#-------------------------------------------------------------------------------
 
-#-----------------------------------------------------------------------------
+sub handle_request {
+  my ($self, $request) = @_;
 
-=method run()
+    my $buffer = '';
+    my %params = %{ $request->params() };
+    $params{out} = \$buffer;
 
-Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
+    my $pinto    = $self->pinto(%params);
+    my $response = HTTP::Engine::Response->new();
 
-=cut
+    if ( $request->method() eq 'POST' ) {
+        my $action = parse_uri( $request->request_uri() );
+
+        $pinto->new_batch(%params);
+        $pinto->add_action($action, %params);
+        $pinto->run_actions();
+        $response->body($buffer);
+
+    }
+    elsif ( $request->method() eq 'GET' ) {
+        my $file = file( $pinto->root(), $request->request_uri() );
+        my $type = $self->get_type($file);
+        $response->headers->header(Content_Type => $type);
+        $response->body( $file->openr() );
+    }
+
+    return $response;
+}
+
+#-------------------------------------------------------------------------------
+
+sub pinto {
+    my ($self, %args) = @_;
+    my $pinto  = Pinto->new(root => $self->root(), %args);
+    return $pinto;
+}
+
+#------------------------------------------------------------------------------
+
+sub parse_uri {
+  my ($uri) = @_;
+  $uri =~ m{^ /action/ ([^/]*) }mx
+    or croak "Cannot parse uri: $uri";
+
+  return ucfirst $1;
+}
+
+#-------------------------------------------------------------------------------
 
 sub run {
-    my ($self) = @_;
-
-    Dancer::set( root   => $self->root()  );
-    Dancer::set( port   => $self->port()   );
-    Dancer::set( daemon => $self->daemon() );
-
-    $self->_initialize();
-    return Dancer::dance();
+    my ($self, @args) = @_;
+    return $self->engine->run(@_);
 }
 
-#-----------------------------------------------------------------------------
-
-sub _initialize {
-    my ($self) = @_;
-
-    ## no critic qw(Carping)
-
-    my $root = $self->root();
-    print "Initializing pinto repository at '$root' ... ";
-    my $pinto = eval { Pinto::Server::Routes::pinto() };
-    print "\n" and die "$@" if not $pinto;
-
-    $pinto->new_batch(noinit => 0);
-    $pinto->add_action('Nop');
-
-    my $result = $pinto->run_actions();
-    print "\n" and die $result->to_string() . "\n" if not $result->is_success();
-
-    print "Done\n";
-
-    return $self;
-}
-
-#----------------------------------------------------------------------------
-
+#-------------------------------------------------------------------------------
 1;
 
 __END__
 
-=head1 DESCRIPTION
 
-There is nothing to see here.
-
-Look at L<pinto-server> instead.
-
-Then you'll probably want to look at L<pinto-remote>.
-
-See L<Pinto::Manual> for a complete guide.
-
-=cut
 
