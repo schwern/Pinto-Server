@@ -27,6 +27,7 @@ has root  => (
 has engine => (
    is         => 'ro',
    isa        => 'HTTP::Engine',
+   init_arg   => undef,
    lazy_build => 1,
 );
 
@@ -51,7 +52,7 @@ sub handle_request {
     my %params = %{ $request->params() };
     $params{out} = \$buffer;
 
-    my $pinto    = $self->pinto(%params);
+    my $pinto    = $self->make_pinto(%params);
     my $response = HTTP::Engine::Response->new();
 
     if ( $request->method() eq 'POST' ) {
@@ -75,7 +76,7 @@ sub handle_request {
 
 #-------------------------------------------------------------------------------
 
-sub pinto {
+sub make_pinto {
     my ($self, %args) = @_;
     my $pinto  = Pinto->new(root => $self->root(), %args);
     return $pinto;
