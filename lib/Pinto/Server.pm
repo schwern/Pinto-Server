@@ -3,18 +3,39 @@
 package Pinto::Server;
 
 use Moose;
-use Pinto::Types qw(Dir);
+use MooseX::NonMoose;
+use MooseX::ClassAttribute;
+use MooseX::Types::Moose qw(Int HashRef);
 
 use Carp;
-use Pinto;
 use Path::Class;
-use HTTP::Engine;
+use Class::Load qw(load_class);
+
+use Plack::Request;
+use Plack::Response;
+use Plack::Middleware::Auth::Basic;
+
+use Pinto;
+use Pinto::Types qw(Dir);
+use Pinto::Constants qw($PINTO_DEFAULT_SERVER_PORT);
 
 #-------------------------------------------------------------------------------
 
 # VERSION
 
 #-------------------------------------------------------------------------------
+
+extends qw(Plack::Component);
+
+#-------------------------------------------------------------------------------
+
+=attr root
+
+The path to the root directory of your Pinto repository.  The
+repository must already exist at this location.  This attribute is
+required.
+
+=cut
 
 has root  => (
    is       => 'ro',
@@ -24,36 +45,93 @@ has root  => (
 );
 
 
-has engine => (
-   is         => 'ro',
-   isa        => 'HTTP::Engine',
-   init_arg   => undef,
-   lazy_build => 1,
+=attr auth
+
+The hashref of authentication options, if authentication is to be used within
+the server. One of the options must be 'backend', to specify which
+Authen::Simple:: class to use; the other key/value pairs will be passed as-is
+to the Authen::Simple class.
+
+=cut
+
+has auth => (
+    is      => 'ro',
+    isa     => HashRef,
+    traits  => ['Hash'],
+    handles => { auth_options => 'elements' },
+);
+
+=attr default_port
+
+Returns the default port number that the server will listen on.  This
+is a class attribute.
+
+=cut
+
+class_has default_port => (
+    is       => 'ro',
+    isa      => Int,
+    default  => $PINTO_DEFAULT_SERVER_PORT,
 );
 
 #-------------------------------------------------------------------------------
 
-sub _build_engine {
+sub prepare_app {
     my ($self) = @_;
 
-    my $handler   = sub { $self->handle_request(@_) };
-    my $interface = {module => 'PSGI', request_handler => $handler};
-    my $engine    = HTTP::Engine->new(interface => $interface);
+    my $root = $self->root();
+    print "Initializing pinto repository at '$root' ... ";
+    my $pinto = eval { Pinto::Server::Routes::pinto() };
+    print "\n" and carp "$@" if not $pinto;
 
-    return $engine;
+    $pinto->new_batch(noinit => 0);
+    $pinto->add_action('Nop');
+
+    my $result = $pinto->run_actions();
+    print "\n" and die $result->to_string() . "\n" if not $result->is_success();
+
+    print "Done\n";
+
+    return $self;
 }
 
 #-------------------------------------------------------------------------------
 
-sub handle_request {
-  my ($self, $request) = @_;
+sub to_app {
+    my ($self) = @_;
+
+    $self->prepare_app;
+    my $app = sub { $self->call(@_) };
+
+    if (my %auth_options = $self->auth_options) {
+
+        my $backend = delete $auth_options{backend}
+          or carp 'No auth backend provided!';
+
+        print "Authenticating using the $backend backend...\n";
+        my $class = 'Authen::Simple::' . $backend;
+        load_class $class;
+
+        $app = Plack::Middleware::Auth::Basic->wrap($app,
+            authenticator => $class->new(%auth_options) );
+    }
+
+    return $app;
+}
+
+#-------------------------------------------------------------------------------
+
+sub call {
+  my ($self, $env) = @_;
+
+    my $request = Plack::Request->new($env);
 
     my $buffer = '';
     my %params = %{ $request->params() };
     $params{out} = \$buffer;
 
     my $pinto    = $self->make_pinto(%params);
-    my $response = HTTP::Engine::Response->new();
+    my $response = Plack::Response->new();
 
     if ( $request->method() eq 'POST' ) {
         my $action = parse_uri( $request->request_uri() );
