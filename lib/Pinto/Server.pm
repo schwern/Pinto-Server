@@ -44,7 +44,6 @@ has root  => (
    coerce   => 1,
 );
 
-
 =attr auth
 
 The hashref of authentication options, if authentication is to be used within
@@ -81,7 +80,7 @@ sub prepare_app {
 
     my $root = $self->root();
     print "Initializing pinto repository at '$root' ... ";
-    my $pinto = eval { Pinto::Server::Routes::pinto() };
+    my $pinto = $self->make_pinto();
     print "\n" and carp "$@" if not $pinto;
 
     $pinto->new_batch(noinit => 0);
@@ -127,7 +126,7 @@ sub call {
     my $request = Plack::Request->new($env);
 
     my $buffer = '';
-    my %params = %{ $request->params() };
+    my %params = %{ $request->parameters() };
     $params{out} = \$buffer;
 
     my $pinto    = $self->make_pinto(%params);
@@ -140,6 +139,7 @@ sub call {
         $pinto->add_action($action, %params);
         $pinto->run_actions();
         $response->body($buffer);
+        $response->status(200);
 
     }
     elsif ( $request->method() eq 'GET' ) {
@@ -147,9 +147,10 @@ sub call {
         my $type = $self->get_type($file);
         $response->headers->header(Content_Type => $type);
         $response->body( $file->openr() );
+        $response->status(200);
     }
 
-    return $response;
+    return $response->finalize();
 }
 
 #-------------------------------------------------------------------------------
@@ -171,16 +172,16 @@ sub parse_uri {
 }
 
 #-------------------------------------------------------------------------------
-
-sub run {
-    my ($self, @args) = @_;
-    return $self->engine->run(@_);
-}
-
-#-------------------------------------------------------------------------------
 1;
 
 __END__
 
+=pod
+
+There is nothing to see here.
+
+Look at L<pinto-server> if you want to start the server.
+
+=cut
 
 

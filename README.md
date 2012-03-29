@@ -4,7 +4,7 @@ Pinto::Server - Web interface to a Pinto repository
 
 # VERSION
 
-version 0.034
+version 0.035
 
 # ATTRIBUTES
 
@@ -25,6 +25,10 @@ to the Authen::Simple class.
 
 Returns the default port number that the server will listen on.  This
 is a class attribute.
+
+There is nothing to see here.
+
+Look at [pinto-server](http://search.cpan.org/perldoc?pinto-server) if you want to start the server.
 
 # SUPPORT
 
