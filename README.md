@@ -6,16 +6,6 @@ Pinto::Server - Web interface to a Pinto repository
 
 version 0.034
 
-# DESCRIPTION
-
-There is nothing to see here.
-
-Look at [pinto-server](http://search.cpan.org/perldoc?pinto-server) instead.
-
-Then you'll probably want to look at [pinto-remote](http://search.cpan.org/perldoc?pinto-remote).
-
-See [Pinto::Manual](http://search.cpan.org/perldoc?Pinto::Manual) for a complete guide.
-
 # ATTRIBUTES
 
 ## root
@@ -24,20 +14,17 @@ The path to the root directory of your Pinto repository.  The
 repository must already exist at this location.  This attribute is
 required.
 
-## port
+## auth
 
-The port number the server shall listen on.  The default is 3000.
+The hashref of authentication options, if authentication is to be used within
+the server. One of the options must be 'backend', to specify which
+Authen::Simple:: class to use; the other key/value pairs will be passed as-is
+to the Authen::Simple class.
 
-## daemon
+## default_port
 
-If true, Pinto::Server will fork and run in a separate process.
-Default is false.
-
-# METHODS
-
-## run()
-
-Starts the Pinto::Server.  Returns a PSGI-compatible code reference.
+Returns the default port number that the server will listen on.  This
+is a class attribute.
 
 # SUPPORT
 
