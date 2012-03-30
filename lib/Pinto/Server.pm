@@ -18,6 +18,7 @@ use Plack::Middleware::Auth::Basic;
 use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Constants qw($PINTO_DEFAULT_SERVER_PORT);
+use Pinto::Server::Handler;
 
 #-------------------------------------------------------------------------------
 
@@ -60,6 +61,21 @@ has auth => (
     handles => { auth_options => 'elements' },
 );
 
+=attr handler
+
+An object that does the L<Pinto::Server::Handler> role.  This object
+will do the work of processing the request and returning a response.
+
+=cut
+
+has handler => (
+    is      => 'ro',
+    isa     => 'Pinto::Server::Handler',
+    builder => '_build_handler',
+    lazy    => 1,
+);
+
+
 =attr default_port
 
 Returns the default port number that the server will listen on.  This
@@ -72,6 +88,15 @@ class_has default_port => (
     isa      => Int,
     default  => $PINTO_DEFAULT_SERVER_PORT,
 );
+
+
+#-------------------------------------------------------------------------------
+
+sub _build_handler {
+    my ($self) = @_;
+
+    return Pinto::Server::Handler->new(root => $self->root);
+}
 
 #-------------------------------------------------------------------------------
 
@@ -121,34 +146,10 @@ sub to_app {
 #-------------------------------------------------------------------------------
 
 sub call {
-  my ($self, $env) = @_;
+    my ($self, $env) = @_;
 
-    my $request = Plack::Request->new($env);
-
-    my $buffer = '';
-    my %params = %{ $request->parameters() };
-    $params{out} = \$buffer;
-
-    my $pinto    = $self->make_pinto(%params);
-    my $response = Plack::Response->new();
-
-    if ( $request->method() eq 'POST' ) {
-        my $action = parse_uri( $request->request_uri() );
-
-        $pinto->new_batch(%params);
-        $pinto->add_action($action, %params);
-        $pinto->run_actions();
-        $response->body($buffer);
-        $response->status(200);
-
-    }
-    elsif ( $request->method() eq 'GET' ) {
-        my $file = file( $pinto->root(), $request->request_uri() );
-        my $type = $self->get_type($file);
-        $response->headers->header(Content_Type => $type);
-        $response->body( $file->openr() );
-        $response->status(200);
-    }
+    my $request  = Plack::Request->new($env);
+    my $response = $self->handler->handle($request);
 
     return $response->finalize();
 }
@@ -162,16 +163,6 @@ sub make_pinto {
 }
 
 #------------------------------------------------------------------------------
-
-sub parse_uri {
-  my ($uri) = @_;
-  $uri =~ m{^ /action/ ([^/]*) }mx
-    or croak "Cannot parse uri: $uri";
-
-  return ucfirst $1;
-}
-
-#-------------------------------------------------------------------------------
 1;
 
 __END__
