@@ -72,10 +72,6 @@ serve.
 
 =over 4
 
-=item --port=N
-
-Sets the port number for the server to listen on.  Default is 3000.
-
 =item --auth
 
 Indicates the an option describing the authentication scheme to use
@@ -99,41 +95,34 @@ and this is how the authentication backend will be constructed:
 
 =item other options
 
-All other options supported by L<plackup> are supported here, e.g. --daemon.
-
-=back
-
-=head1 SUPPORTED ACTIONS
-
-This version of C<pinto-server> supports the following actions:
-
-=over 4
-
-=item * add: Adds a local distribution to the repository
-
-=item * remove: Removes a distribution from the repository
-
-=item * pin: Hold the index to a particular version of a package
-
-=item * unpin: Loosen a package that has been pinned
-
-=item * list: Report the contents of the repository
-
-=item * statistics: Report some statistics about the repository
+All other options supported by L<plackup> are supported too, such as
+--server, --port, --daemonize, etc.  These will be passed to
+L<Plack::Runner>.
 
 =back
 
 =head1 DEPLOYMENT
 
-C<pinto-server> is PSGI compatible, running under L<Plack::Runner> by default.
-However, this may not perform well under heavy load. Since the .psgi file is
-available, so you can run it under an arbitrary backend like this:
+C<pinto-server> is PSGI compatible, running under L<Plack::Runner> by
+default.  It will use whatever backend you specify on the command line
+or have configured in your environment.
 
-    my $server = Pinto::Server->new(%$opts);
-    my $app = $server->to_app;
+If you wish to add your own middleware and/or customize the backend in
+other ways, you can use L<Pinto::Server> in a custom .psgi script like
+this:
 
+    # my-pinto-server.psgi
+
+    my %opts   = (...);
+    my $server = Pinto::Server->new(%opts);
+    my $app    = $server->to_app();
+
+    # wrap $app with middlewares here and/or
     # insert code customized for your backend
     # which operates on the $app
+
+Then you may directly launch F<my-pinto-server.psgi> using L<plackup>.
+
 
 =head1 CAVEATS
 
