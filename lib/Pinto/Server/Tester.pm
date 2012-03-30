@@ -276,3 +276,35 @@ sub DEMOLISH {
 1;
 
 __END__
+
+=pod
+
+=head1 SYNOPSIS
+
+  use Test::More;
+  use Pinto::Server::Tester;
+
+  my $tester = Pinto::Server::Tester->new();
+
+  $tester->start_server;
+  $tester->server_running_ok();
+
+  my $response = $tester->send_request(GET => ... );
+  ok $response->code, 200, 'Got good response code';
+
+  $tester->kill_server();
+  $tester->server_not_running_ok();
+
+=head1 DESCRIPTION
+
+Pinto::Server::Tester is a tool for testing a L<Pinto::Server>.
+Unlike L<Plack::Test> which normally uses a mock backend to run the
+server, Pinto::Server::Tester runs the server on a *real* backend, and
+actually transmits requests and reads responses over the wire, like
+would happen in the real world.
+
+In addition to testing the server, you can also use this tool to
+perform tests on the underlying L<Pinto> repository itself via the
+L<Pinto::Tester> exposed by the C<pinto_tester> attribute.
+
+=cut
