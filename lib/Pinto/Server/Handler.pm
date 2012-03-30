@@ -69,7 +69,12 @@ sub _handle_post {
     $pinto->add_action($action, %params);
     my $result = $pinto->run_actions();
 
-    my $status = $result->is_success ? 200 : 500;
+    # TODO: Figure out how to stream the response, so that remote
+    # users can see the response (usually log messages) as they pour
+    # out of the server.  May need to go back to using the
+    # HTTP::Engine framework for that.
+
+    my $status   = $result->is_success() ? 200 : 500;
     my $response = Plack::Response->new($status);
     $response->body($buffer);
 
