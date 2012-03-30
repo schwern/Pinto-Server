@@ -21,6 +21,11 @@ the server. One of the options must be 'backend', to specify which
 Authen::Simple:: class to use; the other key/value pairs will be passed as-is
 to the Authen::Simple class.
 
+## handler
+
+An object that does the [Pinto::Server::Handler](http://search.cpan.org/perldoc?Pinto::Server::Handler) role.  This object
+will do the work of processing the request and returning a response.
+
 ## default_port
 
 Returns the default port number that the server will listen on.  This
