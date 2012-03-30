@@ -7,6 +7,7 @@ use MooseX::NonMoose;
 use MooseX::Types::Moose qw(Maybe Int);
 
 use Carp;
+use Try::Tiny;
 use Proc::Fork;
 use Path::Class;
 use Plack::Runner;
@@ -49,7 +50,8 @@ has pinto_tester => (
 =attr pinto_server
 
 A L<Pinto::Server> object.  If you do not specify one, it will be
-created for you, using the repostitory created by the C<pinto_tester>.
+created for you, using the root of the repository created by the
+C<pinto_tester>.
 
 =cut
 
@@ -108,7 +110,7 @@ has access_log => (
 
 =method server_url
 
-Returns a L<URI> repesenting the base address of the server.
+Returns a L<URI> representing the base address of the server.
 
 =cut
 
@@ -146,12 +148,12 @@ sub start_server {
             my $runner = Plack::Runner->new();
 
             my @argv = ( '--port'       => $PINTO_SERVER_TEST_PORT,
-                         '--access-log' => $self->access_log);
+                         '--access-log' => $self->access_log );
 
             $runner->parse_options(@argv);
 
-            eval { $runner->run($self->pinto_server->to_app()) };
-            confess "Server quit unexpectedly: $@";
+            try   { $runner->run($self->pinto_server->to_app()) }
+            catch { confess "Server quit unexpectedly: $_"      };
         }
         parent {
             $self->_set_server_pid(shift);
@@ -164,7 +166,7 @@ sub start_server {
 
 #-----------------------------------------------------------------------------
 
-=method start_server
+=method kill_server
 
 Attempts to kill the forked server process using a series increasing
 C<kill> signals.
@@ -257,6 +259,8 @@ sub send_request {
                  : confess "Don't know how to send $type request";
 
     my $response = $self->ua->request($request);
+
+    return $response;
 }
 
 #-----------------------------------------------------------------------------
@@ -268,7 +272,7 @@ sub DEMOLISH {
     my $server_pid = $self->server_pid();
     return if waitpid($server_pid, WNOHANG) == -1;
 
-    $self->kill_server();
+    return $self->kill_server();
 }
 
 #-----------------------------------------------------------------------------
@@ -278,6 +282,10 @@ sub DEMOLISH {
 __END__
 
 =pod
+
+=for Pod::Coverage DEMOLISH WNOHANG
+
+=for stopwords ua url
 
 =head1 SYNOPSIS
 

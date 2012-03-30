@@ -4,6 +4,7 @@ package Pinto::Server::Handler;
 
 use Moose;
 
+use Carp;
 use MIME::Types;
 use Path::Class;
 use Plack::Response;
@@ -36,13 +37,20 @@ has root  => (
 
 #-------------------------------------------------------------------------------
 
+=method handle($request)
+
+Handles one request, returning an L<Plack::Response> that has not been
+finalized.
+
+=cut
+
 sub handle {
     my ($self, $request) = @_;
 
     my $method = $request->method();
     return $self->_handle_post($request) if $method eq 'POST';
     return $self->_handle_get($request)  if $method eq 'GET';
-    die "Unable to process method $method";
+    confess "Unable to process method $method";
 }
 
 #-------------------------------------------------------------------------------
@@ -55,7 +63,7 @@ sub _handle_post {
     $params{out} = \$buffer;
 
     my $pinto  = $self->_make_pinto(%params);
-    my $action = parse_uri($request->path_info);
+    my $action = _parse_uri($request->path_info);
 
     $pinto->new_batch(noinit => 1);
     $pinto->add_action($action, %params);
@@ -74,8 +82,8 @@ sub _handle_get {
     my ($self, $request) = @_;
 
     my $file = file( $self->root(), $request->path_info() );
-    die "$file does not exist" if not -e $file;
-    die "$file is not readable" if not -r $file;
+    confess "$file does not exist" if not -e $file;
+    confess "$file is not readable" if not -r $file;
 
     my $response = Plack::Response->new();
 
@@ -101,10 +109,10 @@ sub _make_pinto {
 
 #-------------------------------------------------------------------------------
 
-sub parse_uri {
+sub _parse_uri {
   my ($uri) = @_;
   $uri =~ m{^ /action/ ([^/]*) }mx
-    or die "Cannot parse uri: $uri";
+    or confess "Cannot parse uri: $uri";
 
   return ucfirst $1;
 }

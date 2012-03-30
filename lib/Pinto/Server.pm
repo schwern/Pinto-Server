@@ -105,7 +105,7 @@ sub prepare_app {
 
     my $root = $self->root();
     print "Initializing pinto repository at '$root' ... ";
-    my $pinto = $self->make_pinto();
+    my $pinto = $self->_make_pinto();
     print "\n" and carp "$@" if not $pinto;
 
     $pinto->new_batch(noinit => 0);
@@ -156,7 +156,7 @@ sub call {
 
 #-------------------------------------------------------------------------------
 
-sub make_pinto {
+sub _make_pinto {
     my ($self, %args) = @_;
     my $pinto  = Pinto->new(root => $self->root(), %args);
     return $pinto;
