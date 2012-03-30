@@ -17,7 +17,7 @@ use Plack::Middleware::Auth::Basic;
 
 use Pinto;
 use Pinto::Types qw(Dir);
-use Pinto::Constants qw($PINTO_DEFAULT_SERVER_PORT);
+use Pinto::Constants qw($PINTO_SERVER_DEFAULT_PORT);
 use Pinto::Server::Handler;
 
 #-------------------------------------------------------------------------------
@@ -86,7 +86,7 @@ is a class attribute.
 class_has default_port => (
     is       => 'ro',
     isa      => Int,
-    default  => $PINTO_DEFAULT_SERVER_PORT,
+    default  => $PINTO_SERVER_DEFAULT_PORT,
 );
 
 
