@@ -177,6 +177,7 @@ sub kill_server {
     my ($self) = @_;
 
     my $server_pid = $self->server_pid();
+    return if not defined $server_pid; # Was never started
 
     for my $signal (2, 3, 7, 9) {
 
@@ -267,10 +268,6 @@ sub send_request {
 
 sub DEMOLISH {
     my ($self) = @_;
-
-    # NOTE: This may not be very portable
-    my $server_pid = $self->server_pid();
-    return if waitpid($server_pid, WNOHANG) == -1;
 
     return $self->kill_server();
 }

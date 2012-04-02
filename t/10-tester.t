@@ -6,7 +6,7 @@ use warnings;
 use Test::More;
 use Pinto::Server::Tester;
 
-#------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 # Not really testing the tester here, just exercising it
 
 my $t = Pinto::Server::Tester->new();
@@ -25,6 +25,6 @@ is $post_resp->code, 200, 'POST-ing action/list'
 $t->kill_server();
 $t->server_not_running_ok();
 
-#------------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
 
 done_testing();

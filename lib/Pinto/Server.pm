@@ -9,6 +9,7 @@ use MooseX::Types::Moose qw(Int HashRef);
 
 use Carp;
 use Path::Class;
+use Scalar::Util qw(blessed);
 use Class::Load qw(load_class);
 
 use Plack::Request;
@@ -151,7 +152,10 @@ sub call {
     my $request  = Plack::Request->new($env);
     my $response = $self->handler->handle($request);
 
-    return $response->finalize();
+    $response = $response->finalize()
+        if blessed($response) && $response->can('finalize');
+
+    return $response;
 }
 
 #-------------------------------------------------------------------------------

@@ -61,7 +61,7 @@ test_psgi
         $req->authorization_basic('my-login', 'my-password');
         my $res = $cb->($req);
         ok $res->is_success, 'Request with correct password succeeded';
-        is $res->content, '', 'Expected content';
+        is $res->content, undef, 'Expected content';
     };
 
 test_psgi

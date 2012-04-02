@@ -5,8 +5,10 @@ package Pinto::Server::Handler;
 use Moose;
 
 use Carp;
+use IO::Pipe;
 use MIME::Types;
 use Path::Class;
+use Proc::Fork;
 use Plack::Response;
 
 use Pinto::Types qw(Dir);
@@ -57,11 +59,7 @@ sub handle {
 sub _handle_post {
     my ($self, $request) = @_;
 
-    my $buffer   = '';
-    my %params   = %{ $request->parameters() };
-    $params{out} = \$buffer;
-
-    my $pinto  = $self->_make_pinto(%params);
+    my %params = %{ $request->parameters() };
     my $action = _parse_uri($request->path_info);
 
     if (my $uploads = $request->uploads) {
@@ -71,20 +69,7 @@ sub _handle_post {
         }
     }
 
-    $pinto->new_batch(noinit => 1);
-    $pinto->add_action($action, %params);
-    my $result = $pinto->run_actions();
-
-    # TODO: Figure out how to stream the response, so that remote
-    # users can see the response (usually log messages) as they pour
-    # out of the server.  May need to go back to using the
-    # HTTP::Engine framework for that.
-
-    my $status   = $result->is_success() ? 200 : 500;
-    my $response = Plack::Response->new($status);
-    $response->body($buffer);
-
-    return $response;
+    return $self->_fork_and_respond($action, %params);
 }
 
 #-------------------------------------------------------------------------------
@@ -139,6 +124,32 @@ sub _get_file_type {
     return $type;
 }
 
+#-----------------------------------------------------------------------------
+
+sub _fork_and_respond {
+    my ($self, $action, %params) = @_;
+
+    my $response;
+    my $pipe = IO::Pipe->new();
+
+    run_fork {
+        child {
+            my $writer = $pipe->writer();
+            $params{out} = $writer;
+            my $pinto = $self->_make_pinto(%params);
+            $pinto->new_batch(%params, noinit => 1);
+            $pinto->add_action($action, %params);
+            my $result = $pinto->run_actions();
+            exit $result->is_success() ? 0 : 1;
+        }
+        parent {
+            my $reader = $pipe->reader();
+            $response  = sub {$_[0]->( [200, [], $reader] )};
+        }
+    };
+
+    return $response;
+}
 #-----------------------------------------------------------------------------
 1;
 
