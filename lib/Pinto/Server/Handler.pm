@@ -64,7 +64,6 @@ sub _handle_post {
     my $pinto  = $self->_make_pinto(%params);
     my $action = _parse_uri($request->path_info);
 
-    $DB::single = 1;
     if (my $uploads = $request->uploads) {
         for my $upload_name ( $uploads->keys ) {
             my $upload = $uploads->{$upload_name};
