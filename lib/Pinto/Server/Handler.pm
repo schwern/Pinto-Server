@@ -9,6 +9,8 @@ use IO::Pipe;
 use MIME::Types;
 use Path::Class;
 use Proc::Fork;
+use File::Copy;
+use Path::Class;
 use Plack::Response;
 
 use Pinto::Types qw(Dir);
@@ -64,8 +66,11 @@ sub _handle_post {
 
     if (my $uploads = $request->uploads) {
         for my $upload_name ( $uploads->keys ) {
-            my $upload = $uploads->{$upload_name};
-            $params{$upload_name} = $upload->path;
+            my $upload   = $uploads->{$upload_name};
+            my $filename = $upload->filename;
+            my $file     = file($upload->path)->dir->file($filename);
+            File::Copy::move( $upload->path, $file); #TODO: autodie
+            $params{$upload_name} = $file;
         }
     }
 
@@ -134,6 +139,7 @@ sub _stream_response {
     run_fork {
         child {
             my $writer = $pipe->writer();
+            $writer->autoflush(1);
             $params{out} = $writer;
             my $pinto = $self->_make_pinto(%params);
             $pinto->new_batch(%params, noinit => 1);
