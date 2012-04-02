@@ -9,7 +9,6 @@ use MIME::Types;
 use Path::Class;
 use Plack::Response;
 
-
 use Pinto::Types qw(Dir);
 
 #-------------------------------------------------------------------------------
@@ -58,12 +57,20 @@ sub handle {
 sub _handle_post {
     my ($self, $request) = @_;
 
-    my $buffer = '';
-    my %params = %{ $request->parameters() };
+    my $buffer   = '';
+    my %params   = %{ $request->parameters() };
     $params{out} = \$buffer;
 
     my $pinto  = $self->_make_pinto(%params);
     my $action = _parse_uri($request->path_info);
+
+    $DB::single = 1;
+    if (my $uploads = $request->uploads) {
+        for my $upload_name ( $uploads->keys ) {
+            my $upload = $uploads->{$upload_name};
+            $params{$upload_name} = $upload->path;
+        }
+    }
 
     $pinto->new_batch(noinit => 1);
     $pinto->add_action($action, %params);
@@ -87,7 +94,7 @@ sub _handle_get {
     my ($self, $request) = @_;
 
     my $file = file( $self->root(), $request->path_info() );
-    confess "$file does not exist" if not -e $file;
+    confess "$file does not exist"  if not -e $file;
     confess "$file is not readable" if not -r $file;
 
     my $response = Plack::Response->new();
