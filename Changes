@@ -8,6 +8,23 @@
     you'll also need to use a version of pinto-remote that
     supports authentication.  (Karen Etheridge)
 
+    pinto-server now streams back the output from Actions.  You will
+    need to use a backend server that supports streaming for this to
+    work (e.g. Starman, Twiggy, etc.)  Fortunatley, the default
+    backend (HTTP::Server::PSGI) does support streaming.
+
+    Other Stuff:
+
+    Pinto::Server has been completely redesigned into a simple web
+    application micro-framework.  This eliminates our dependency on
+    Dancer (not that there is anything wrong with Dancer.  I just
+    needed something a little less frameworky).
+
+    In theory, Pinto::Server now scales to support any future Action
+    without having to write any additional code here.  As long as your
+    Action follows convention and behaves properly, then the server
+    will just do-the-right-thing.
+
 0.034     2012-03-17 08:47:01 America/Los_Angeles
 
     Bug Fixes:
