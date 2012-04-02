@@ -69,7 +69,11 @@ sub _handle_post {
         }
     }
 
-    return $self->_fork_and_respond($action, %params);
+    my $response = $request->env->{'psgi.streaming'} ?
+                   $self->_stream_response($action, %params)
+                 : $self->_splat_response($action, %params);
+
+    return $response;
 }
 
 #-------------------------------------------------------------------------------
@@ -82,13 +86,8 @@ sub _handle_get {
     confess "$file is not readable" if not -r $file;
 
     my $response = Plack::Response->new();
-
-    my $type = $self->_get_file_type($file);
-    $response->header(Content_Type => $type);
-
-    my $length = -s $file;
-    $response->header(Content_Length => $length);
-
+    $response->content_type( $self->_get_file_type($file) );
+    $response->content_length( -s $file );
     $response->body( $file->openr() );
     $response->status(200);
 
@@ -126,7 +125,7 @@ sub _get_file_type {
 
 #-----------------------------------------------------------------------------
 
-sub _fork_and_respond {
+sub _stream_response {
     my ($self, $action, %params) = @_;
 
     my $response;
@@ -152,6 +151,25 @@ sub _fork_and_respond {
 
     return $response;
 }
+
+#-----------------------------------------------------------------------------
+
+sub _splat_response {
+    my ($self, $action, %params) = @_;
+
+    my $pinto = $self->_make_pinto(%params);
+    $pinto->new_batch(%params, noinit => 1);
+    $pinto->add_action($action, %params);
+    my $result = $pinto->run_actions();
+
+    my $status   = $result->is_success() ? 200 : 500;
+    my $body     = $result->to_string();
+    my $headers  = [ 'Content-Length' => length $body ];
+    my $response = Plack::Response->new($status, $headers, $body);
+
+    return $response;
+}
+
 #-----------------------------------------------------------------------------
 1;
 
