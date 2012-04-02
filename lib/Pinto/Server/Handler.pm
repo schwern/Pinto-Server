@@ -144,7 +144,9 @@ sub _fork_and_respond {
         }
         parent {
             my $reader = $pipe->reader();
-            $response  = sub {$_[0]->( [200, [], $reader] )};
+            my $header = [Streaming => 1];
+            # TODO: Maybe add byte-range headers here?
+            $response  = sub {$_[0]->( [200, $header, $reader] )};
         }
     };
 
