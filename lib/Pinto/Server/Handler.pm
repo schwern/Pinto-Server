@@ -12,6 +12,7 @@ use Proc::Fork;
 use File::Copy;
 use Path::Class;
 use Plack::Response;
+use IO::Handle::Util qw(io_from_getline);
 
 use Pinto::Types qw(Dir);
 
@@ -133,6 +134,12 @@ sub _get_file_type {
 sub _stream_response {
     my ($self, $action, %params) = @_;
 
+    # Here's what's going on: Open a pipe (which has two endpoints),
+    # the fork.  The child process runs the Action and writes output
+    # to one end of the pipe.  Meanwhile, the parent reads input from
+    # the other end of the pipe and spits it into the response via
+    # callback.
+
     my $response;
     my $pipe = IO::Pipe->new();
 
@@ -149,9 +156,15 @@ sub _stream_response {
         }
         parent {
             my $reader = $pipe->reader();
-            my $header = [Streaming => 1];
-            # TODO: Maybe add byte-range headers here?
-            $response  = sub {$_[0]->( [200, $header, $reader] )};
+
+            # In Plack::Util::foreach(), input is buffered at 65536
+            # bytes We want to buffer each line only.  So we make our
+            # own input handle with $/ set accordingly.
+
+            my $getline   = sub { local $/ = "\n"; $reader->getline };
+            my $io_handle = io_from_getline( $getline );
+            my $headers   = ['Content-Type' => 'text/plain'];
+            $response  = sub {$_[0]->( [200, $headers, $io_handle] )};
         }
     };
 
