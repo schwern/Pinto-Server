@@ -155,6 +155,10 @@ sub _stream_response {
             my $getline   = sub { local $/ = "\n"; $reader->getline };
             my $io_handle = io_from_getline( $getline );
             my $headers   = ['Content-Type' => 'text/plain'];
+
+            # TODO: Need to figure out how to communicate a failure
+            # once we've started the stream.
+
             $response  = sub {$_[0]->( [200, $headers, $io_handle] )};
         }
     };
