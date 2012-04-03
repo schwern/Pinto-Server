@@ -176,18 +176,14 @@ C<kill> signals.
 sub kill_server {
     my ($self) = @_;
 
+    return if not $self->server_is_running();
+
     my $server_pid = $self->server_pid();
-    return if not defined $server_pid; # Was never started
 
     for my $signal (2, 3, 7, 9) {
-
-        kill $signal, $server_pid
-            or confess "Failed to signal $signal to server $server_pid";
-
+        kill $signal, $server_pid;
         sleep 2; # Wait a moment to shut down;
-
-        # NOTE: This may not be very portable
-        return if waitpid($server_pid, WNOHANG) != 0;
+        return if not $self->server_is_running();
     }
 
     confess "Could not kill server $server_pid";
@@ -209,8 +205,8 @@ sub server_running_ok {
         return $self->tb->fail('Server was never started');
     }
 
-    my $server_status = (waitpid($pid, WNOHANG) == 0 );
-    return $self->tb->ok($server_status, "Server $pid is running");
+    my $status = $self->server_is_running();
+    return $self->tb->ok($status, "Server $pid is running");
 }
 
 #-----------------------------------------------------------------------------
@@ -229,8 +225,27 @@ sub server_not_running_ok {
         return $self->tb->fail('Server was never started');
     }
 
-    my $server_status = ( waitpid($pid, WNOHANG) == -1 );
-    return $self->tb->ok($server_status, "Server $pid is not running");
+    my $status = $self->server_is_running();
+    return $self->tb->ok(!$status, "Server $pid is not running");
+}
+
+#-----------------------------------------------------------------------------
+
+=method server_is_running
+
+Returns a true value if the server is running.
+
+=cut
+
+sub server_is_running {
+    my ($self) = @_;
+
+    my $pid = $self->server_pid();
+    return if not $pid;  # Never started
+
+    my $is_running = (waitpid($pid, WNOHANG) >= 0);
+
+    return $is_running;
 }
 
 #-----------------------------------------------------------------------------
