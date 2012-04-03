@@ -6,13 +6,15 @@ use Moose;
 
 use Carp;
 use IO::Pipe;
-use MIME::Types;
+use Plack::MIME;
 use Path::Class;
 use Proc::Fork;
 use File::Copy;
 use Path::Class;
 use Plack::Response;
+use English qw(-no_match_vars);
 use IO::Handle::Util qw(io_from_getline);
+use POSIX qw(:sys_wait_h);
 
 use Pinto::Types qw(Dir);
 
@@ -54,7 +56,7 @@ sub handle {
     my $method = $request->method();
     return $self->_handle_post($request) if $method eq 'POST';
     return $self->_handle_get($request)  if $method eq 'GET';
-    confess "Unable to process method $method";
+    return $self->_error_response(500, "Unable to process method $method");
 }
 
 #-------------------------------------------------------------------------------
@@ -88,11 +90,10 @@ sub _handle_get {
     my ($self, $request) = @_;
 
     my $file = file( $self->root(), $request->path_info() );
-    confess "$file does not exist"  if not -e $file;
-    confess "$file is not readable" if not -r $file;
+    return $self->_error_response(404, "File $file not found") if not -e $file;
 
     my $response = Plack::Response->new();
-    $response->content_type( $self->_get_file_type($file) );
+    $response->content_type( Plack::MIME->mime_type($file) );
     $response->content_length( -s $file );
     $response->body( $file->openr() );
     $response->status(200);
@@ -116,17 +117,6 @@ sub _parse_uri {
     or confess "Cannot parse uri: $uri";
 
   return ucfirst $1;
-}
-
-#-----------------------------------------------------------------------------
-
-sub _get_file_type {
-    my ($self, $file) = @_;
-
-    my $mt = MIME::Types->new();
-    my $type = $mt->mimeTypeOf($file);
-
-    return $type;
 }
 
 #-----------------------------------------------------------------------------
@@ -155,7 +145,8 @@ sub _stream_response {
             exit $result->is_success() ? 0 : 1;
         }
         parent {
-            my $reader = $pipe->reader();
+            my $child_pid = shift;
+            my $reader    = $pipe->reader();
 
             # In Plack::Util::foreach(), input is buffered at 65536
             # bytes We want to buffer each line only.  So we make our
@@ -187,6 +178,15 @@ sub _splat_response {
     my $response = Plack::Response->new($status, $headers, $body);
 
     return $response;
+}
+
+sub _error_response {
+    my ($self, $code, $message) = @_;
+
+    $code    ||= 500;
+    $message ||= 'Unkown error';
+
+    return Plack::Response->new($code, undef, $message);
 }
 
 #-----------------------------------------------------------------------------
