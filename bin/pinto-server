@@ -42,6 +42,8 @@ $runner->run($app);
 
 __END__
 
+=pod
+
 =head1 SYNOPSIS
 
   pinto-server --root=/path/to/repository [--daemon] [--port=N]
@@ -96,7 +98,7 @@ and this is how the authentication backend will be constructed:
 =item other options
 
 All other options supported by L<plackup> are supported too, such as
---server, --port, --daemonize, etc.  These will be passed to
+C<--server>, C<--port>, C<--daemonize>, etc.  These will be passed to
 L<Plack::Runner>.
 
 =back
