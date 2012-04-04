@@ -3,149 +3,155 @@
 use strict;
 use warnings;
 
+use Test::More;
+use Plack::Test;
+
 use FindBin;
 use Path::Class;
+use HTTP::Request::Common;
 use Class::Load qw(load_class);
 
-use Test::More;
-use Pinto::Server::Tester;
-
+use Pinto::Tester;
+use Pinto::Server;
 use Pinto::Constants qw(:all);
-
-#------------------------------------------------------------------------------
-
-my @BACKENDS = ($ENV{AUTHOR_TESTING} or $ENV{RELEASE_TESTING}) ?
-    qw(Starman Twiggy Corona Feersum Starlet) : ();
 
 #------------------------------------------------------------------------------
 # Setup...
 
-START:
-my $t = Pinto::Server::Tester->new();
-$t->start_server();
-$t->server_running_ok();
+my $t    = Pinto::Tester->new();
+my %opts = (root => $t->pinto->root());
+my $app  = Pinto::Server->new(%opts)->to_app();
 
 #------------------------------------------------------------------------------
-# Meat...
+# Tests...
 
-{
-    my $res = $t->send_request( GET => 'modules/02packages.details.txt.gz' );
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $req = GET('modules/02packages.details.txt.gz');
+        my $res = $cb->($req);
 
-    is $res->code, 200, 'Correct status code';
+        is $res->code, 200, 'Correct status code';
 
-    is $res->header('Content-Type'), 'application/x-gzip',
-        'Correct Type header';
+        is $res->header('Content-Type'), 'application/x-gzip',
+            'Correct Type header';
 
-    ok $res->header('Content-Length') > 300,
-        'Reasonable Length header'; # Actual length may vary
+        ok $res->header('Content-Length') > 300,
+            'Reasonable Length header'; # Actual length may vary
 
-    ok $res->header('Content-Length') < 400,
-        'Reasonable Length header'; # Actual length may vary
+        ok $res->header('Content-Length') < 400,
+            'Reasonable Length header'; # Actual length may vary
 
-    is $res->header('Content-Length'), length $res->content,
-        'Length header matches actual length';
-}
-
-#------------------------------------------------------------------------------
-
-{
-    my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
-    my $params  = {author => 'THEBARD', norecurse => 1, archive => [$archive]};
-    my $res  = $t->send_request( POST => 'action/add', Content => $params );
-    my $body = $res->content;
-
-
-    is $res->code, 200, 'Correct status code';
-
-    is $res->header('Content-Type'), 'text/plain', 'Correct Type header';
-
-    like $body, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
-        'Response starts with prologue';
-
-    like $body, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
-        'Response ends with epilogue';
-}
+        is $res->header('Content-Length'), length $res->content,
+            'Length header matches actual length';
+    };
 
 #------------------------------------------------------------------------------
 
-{
-    my $res = $t->send_request( POST => 'action/list' );
-    is   $res->code, 200, 'Correct status code';
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
+        my $params  = {author => 'THEBARD', norecurse => 1, archive => [$archive]};
+        my $req     = POST( 'action/add', Content => $params);
+        my $res     = $cb->($req);
 
-    like $res->content, qr{Foo \s+ 0.7 \s+ T/TH/THEBARD/TestDist-1.0.tar.gz}x,
-        'Listing contains the Foo package';
+        is $res->code, 200, 'Correct status code';
 
-    like $res->content, qr{Bar \s+ 0.8 \s+ T/TH/THEBARD/TestDist-1.0.tar.gz}x,
-        'Listing contains the Bar package';
-}
+        is $res->header('Content-Type'), 'text/plain', 'Correct Type header';
 
-#------------------------------------------------------------------------------
+        like $res->content, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
+            'Response starts with prologue';
 
-{
-    my %params = (Content => {verbose => 3});
-    my $res  = $t->send_request( POST => 'action/purge', %params );
-    my $body = $res->content;
-
-    is   $res->code, 200, 'Correct status code';
-
-    like $body, qr{Process \d+ got the lock},
-       'Content includes log messages when verbose';
-
-    chomp $body;
-    my @lines = split m{\n}, $body;
-    ok @lines > 3, 'Got a reasonable number of lines'; # May vary
-
-    like $_, qr{^$PINTO_SERVER_RESPONSE_LINE_PREFIX},
-        'Log line starts with prefix' for @lines;
-}
+        like $res->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
+            'Response ends with epilogue';
+    };
 
 #------------------------------------------------------------------------------
 
-{
-    my $res = $t->send_request( GET => 'bogus/path' );
-    is   $res->code, 404, 'Correct status code';
-    like $res->content, qr{not found}i, 'File not found message';
-}
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb   = shift;
+        my $req  = POST('action/list');
+        my $res  = $cb->($req);
+
+        is   $res->code, 200, 'Correct status code';
+
+        like $res->content, qr{Foo \s+ 0.7 \s+ T/TH/THEBARD/TestDist-1.0.tar.gz}x,
+            'Listing contains the Foo package';
+
+        like $res->content, qr{Bar \s+ 0.8 \s+ T/TH/THEBARD/TestDist-1.0.tar.gz}x,
+            'Listing contains the Bar package';
+    };
 
 #------------------------------------------------------------------------------
 
-{
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $req = POST('action/purge', Content => {verbose => 3});
+        my $res = $cb->($req);
 
-    my $warning = '';
-    $SIG{__WARN__} = sub { $warning = shift };
+        is   $res->code, 200, 'Correct status code';
 
-    my $res = $t->send_request( POST => 'action/bogus' );
-    my $body = $res->content;
+        like $res->content, qr{Process \d+ got the lock},
+            'Content includes log messages when verbose';
 
-    like   $body, qr{Can't locate Pinto/Action/Bogus.pm}i,
-        'Got an error message';
+        my $content = $res->content;
+        chomp $content;
 
-    like   $body, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
-        'Response starts with prologue';
+        my @lines = split m{\n}, $content;
+        ok @lines > 3, 'Got a reasonable number of lines'; # May vary
 
-    unlike $body, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
-        'Error response does not end with epilogue';
-}
-
-#------------------------------------------------------------------------------
-# Teardown...
-
-$t->kill_server();
-$t->server_not_running_ok();
+        like $_, qr{^$PINTO_SERVER_RESPONSE_LINE_PREFIX},
+            'Log line starts with prefix' for @lines;
+    };
 
 #------------------------------------------------------------------------------
-# Repeat the entire test for various backends we know of
 
-while (my $backend = shift @BACKENDS) {
-    eval { load_class($backend) } or next;
-    diag "Now testing on $backend";
-    $ENV{PLACK_SERVER} = $backend;
-    goto START;
-}
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $req = GET('bogus/path');
+        my $res = $cb->($req);
 
+        is   $res->code, 404, 'Correct status code';
+        like $res->content, qr{not found}i, 'File not found message';
+    };
+
+#------------------------------------------------------------------------------
+
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $req = POST('action/bogus');
+        my $res = $cb->($req);
+
+        my $content = $res->content;
+
+        like   $content, qr{Can't locate Pinto/Action/Bogus.pm}i,
+            'Got an error message';
+
+        like   $content, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
+            'Response starts with prologue';
+
+        unlike $content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
+            'Error response does not end with epilogue';
+    };
 
 #------------------------------------------------------------------------------
 
 done_testing();
+
+
+
+
+
 
 
