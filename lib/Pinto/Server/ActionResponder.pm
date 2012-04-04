@@ -5,8 +5,10 @@ package Pinto::Server::ActionResponder;
 use Moose;
 
 use Carp;
+use Try::Tiny;
 
 use Pinto;
+use Pinto::Result;
 use Pinto::Types qw(Dir);
 use Pinto::Constants qw(:all);
 
@@ -37,10 +39,18 @@ sub run_pinto {
 
     print { $args{out} } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
-    my $pinto = Pinto->new(%args);
-    $pinto->new_batch(%args, noinit => 1);
-    $pinto->add_action($action, %args);
-    my $result = $pinto->run_actions();
+    my $result;
+    try   {
+        my $pinto = Pinto->new(%args);
+        $pinto->new_batch(%args, noinit => 1);
+        $pinto->add_action($action, %args);
+        $result = $pinto->run_actions();
+    }
+    catch {
+        print { $args{out}} $_;
+        $result = Pinto::Result->new();
+        $result->add_exception($_);
+    };
 
     print { $args{out} } "$PINTO_SERVER_RESPONSE_EPILOGUE\n"
         if $result->is_success();
