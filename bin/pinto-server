@@ -139,12 +139,5 @@ VCS.  If you start modifying Pinto's area of the VCS directly, then
 the working copy for C<pinto-server> will become out of date and
 conflicts will happen.
 
-=head1 LIMITATIONS
-
-C<pinto-server> speaks HTTP, but does not actually serve HTML.  At the
-moment, it is geared toward command line tools like L<pinto-remote> so
-it just returns plain text.  This will probably change as
-C<pinto-server> evolves into a real web application.
-
 =cut
 
