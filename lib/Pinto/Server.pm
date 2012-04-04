@@ -113,7 +113,7 @@ sub to_app {
             or carp 'No auth backend provided!';
 
         my $class = 'Authen::Simple::' . $backend;
-        print "Authenticating using $class\n";
+        print "Authenticating using $class\n" if is_interactive();
         load_class($class);
 
         $app = Plack::Middleware::Auth::Basic->wrap($app,
