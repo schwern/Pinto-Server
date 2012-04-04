@@ -30,26 +30,40 @@ $t->server_running_ok();
 
 {
     my $res = $t->send_request( GET => 'modules/02packages.details.txt.gz' );
-    is $res->header('Content-Type'), 'application/x-gzip', 'Correct Type header';
-    ok $res->header('Content-Length') > 300, 'Reasonable Length header'; # May vary
-    ok $res->header('Content-Length') < 400, 'Reasonable Length header'; # May vary
+
     is $res->code, 200, 'Correct status code';
+
+    is $res->header('Content-Type'), 'application/x-gzip',
+        'Correct Type header';
+
+    ok $res->header('Content-Length') > 300,
+        'Reasonable Length header'; # Actual length may vary
+
+    ok $res->header('Content-Length') < 400,
+        'Reasonable Length header'; # Actual length may vary
+
+    is $res->header('Content-Length'), length $res->content,
+        'Length header matches actual length';
 }
 
 #------------------------------------------------------------------------------
 
 {
     my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
-    my %params  = (Content => {author => 'THEBARD', norecurse => 1, archive => [$archive]} );
-    my $res  = $t->send_request( POST => 'action/add', %params );
+    my $params  = {author => 'THEBARD', norecurse => 1, archive => [$archive]};
+    my $res  = $t->send_request( POST => 'action/add', Content => $params );
     my $body = $res->content;
 
 
     is $res->code, 200, 'Correct status code';
+
     is $res->header('Content-Type'), 'text/plain', 'Correct Type header';
 
-    like $body, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n}, 'Response starts with prologue';
-    like $body, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$}, 'Response ends with epilogue';
+    like $body, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
+        'Response starts with prologue';
+
+    like $body, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
+        'Response ends with epilogue';
 }
 
 #------------------------------------------------------------------------------
@@ -73,14 +87,16 @@ $t->server_running_ok();
     my $body = $res->content;
 
     is   $res->code, 200, 'Correct status code';
-    like $body, qr{Process \d+ got the lock}, 'Content includes log messages when verbose';
 
+    like $body, qr{Process \d+ got the lock},
+       'Content includes log messages when verbose';
 
     chomp $body;
     my @lines = split m{\n}, $body;
     ok @lines > 3, 'Got a reasonable number of lines'; # May vary
-    $DB::single = 1;
-    like $_, qr{^$PINTO_SERVER_RESPONSE_LINE_PREFIX}, 'Log line starts with prefix' for @lines;
+
+    like $_, qr{^$PINTO_SERVER_RESPONSE_LINE_PREFIX},
+        'Log line starts with prefix' for @lines;
 }
 
 #------------------------------------------------------------------------------
@@ -94,13 +110,21 @@ $t->server_running_ok();
 #------------------------------------------------------------------------------
 
 {
-    # TODO: Make sure we get a failed status when streaming and an error occurs.
+
+    my $warning = '';
+    $SIG{__WARN__} = sub { $warning = shift };
+
     my $res = $t->send_request( POST => 'action/bogus' );
     my $body = $res->content;
 
-    like   $body, qr{Can't locate Pinto/Action/Bogus.pm}i, 'Got an error message';
-    like   $body, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n}, 'Response starts with prologue';
-    unlike $body, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$}, 'Error response does not end with epilogue';
+    like   $body, qr{Can't locate Pinto/Action/Bogus.pm}i,
+        'Got an error message';
+
+    like   $body, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
+        'Response starts with prologue';
+
+    unlike $body, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
+        'Error response does not end with epilogue';
 }
 
 #------------------------------------------------------------------------------
