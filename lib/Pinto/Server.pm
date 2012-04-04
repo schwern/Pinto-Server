@@ -11,9 +11,9 @@ use Carp;
 use Path::Class;
 use Scalar::Util qw(blessed);
 use Class::Load qw(load_class);
+use IO::Interactive qw(is_interactive);
 
 use Plack::Request;
-use Plack::Response;
 use Plack::Middleware::Auth::Basic;
 
 use Pinto;
@@ -101,27 +101,6 @@ sub _build_handler {
 
 #-------------------------------------------------------------------------------
 
-sub prepare_app {
-    my ($self) = @_;
-
-    my $root = $self->root();
-    print "Initializing pinto repository at '$root' ... ";
-    my $pinto = $self->_make_pinto();
-    print "\n" and carp "$@" if not $pinto;
-
-    $pinto->new_batch(noinit => 0);
-    $pinto->add_action('Nop');
-
-    my $result = $pinto->run_actions();
-    print "\n" and die "\n" if not $result->is_success();
-
-    print "Done\n";
-
-    return $self;
-}
-
-#-------------------------------------------------------------------------------
-
 sub to_app {
     my ($self) = @_;
 
@@ -131,17 +110,33 @@ sub to_app {
     if (my %auth_options = $self->auth_options) {
 
         my $backend = delete $auth_options{backend}
-          or carp 'No auth backend provided!';
+            or carp 'No auth backend provided!';
 
-        print "Authenticating using the $backend backend...\n";
         my $class = 'Authen::Simple::' . $backend;
-        load_class $class;
+        print "Authenticating using $class\n";
+        load_class($class);
 
         $app = Plack::Middleware::Auth::Basic->wrap($app,
             authenticator => $class->new(%auth_options) );
     }
 
     return $app;
+}
+
+#-------------------------------------------------------------------------------
+
+sub prepare_app {
+
+    my ($self) = @_;
+
+    my $root = $self->root();
+    print "Initializing pinto repository at $root\n" if is_interactive();
+
+    my $pinto  = Pinto->new(root => $self->root);
+    my $result = $pinto->new_batch(noinit => 0)->add_action('Nop')->run_actions;
+    confess $result if not $result->is_success;
+
+    return $self;
 }
 
 #-------------------------------------------------------------------------------
@@ -159,14 +154,6 @@ sub call {
 }
 
 #-------------------------------------------------------------------------------
-
-sub _make_pinto {
-    my ($self, %args) = @_;
-    my $pinto  = Pinto->new(root => $self->root(), %args);
-    return $pinto;
-}
-
-#------------------------------------------------------------------------------
 1;
 
 __END__
