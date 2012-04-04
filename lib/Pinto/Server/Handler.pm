@@ -17,6 +17,7 @@ use IO::Handle::Util qw(io_from_getline);
 use POSIX qw(:sys_wait_h);
 
 use Pinto::Types qw(Dir);
+use Pinto::Constants qw(:all);
 
 #-------------------------------------------------------------------------------
 
@@ -103,14 +104,6 @@ sub _handle_get {
 
 #-------------------------------------------------------------------------------
 
-sub _make_pinto {
-    my ($self, %args) = @_;
-    my $pinto  = Pinto->new(root => $self->root(), %args);
-    return $pinto;
-}
-
-#-------------------------------------------------------------------------------
-
 sub _parse_uri {
   my ($uri) = @_;
   $uri =~ m{^ /action/ ([^/]*) }mx
@@ -138,10 +131,7 @@ sub _stream_response {
             my $writer = $pipe->writer();
             $writer->autoflush(1);
             $params{out} = $writer;
-            my $pinto = $self->_make_pinto(%params);
-            $pinto->new_batch(%params, noinit => 1);
-            $pinto->add_action($action, %params);
-            my $result = $pinto->run_actions();
+            my $result = $self->_run_pinto($action, %params);
             exit $result->is_success() ? 0 : 1;
         }
         parent {
@@ -171,18 +161,17 @@ sub _stream_response {
 sub _splat_response {
     my ($self, $action, %params) = @_;
 
-    my $pinto = $self->_make_pinto(%params);
-    $pinto->new_batch(%params, noinit => 1);
-    $pinto->add_action($action, %params);
-    my $result = $pinto->run_actions();
-
+    my $buffer   = '';
+    my $out      = IO::String->new( \$buffer );
+    my $result   = $self->_run_pinto($out, $action, %params);
     my $status   = $result->is_success() ? 200 : 500;
-    my $body     = $result->to_string();
-    my $headers  = [ 'Content-Length' => length $body ];
-    my $response = Plack::Response->new($status, $headers, $body);
+    my $response = Plack::Response->new($status, undef, $buffer);
+    $response->content_length(length $buffer);
 
     return $response;
 }
+
+#-----------------------------------------------------------------------------
 
 sub _error_response {
     my ($self, $code, $message) = @_;
@@ -191,6 +180,27 @@ sub _error_response {
     $message ||= 'Unkown error';
 
     return Plack::Response->new($code, undef, $message);
+}
+
+#-----------------------------------------------------------------------------
+
+sub _run_pinto {
+    my ($self, $action, %args) = @_;
+
+    $args{root} = $self->root;
+    $args{log_prefix} = $PINTO_SERVER_RESPONSE_LINE_PREFIX;
+
+    print { $args{out} } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
+
+    my $pinto = Pinto->new(%args);
+    $pinto->new_batch(%args, noinit => 1);
+    $pinto->add_action($action, %args);
+    my $result = $pinto->run_actions();
+
+    print { $args{out} } "$PINTO_SERVER_RESPONSE_EPILOGUE\n"
+        if $result->is_success();
+
+    return $result;
 }
 
 #-----------------------------------------------------------------------------
