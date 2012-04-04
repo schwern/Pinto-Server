@@ -9,7 +9,6 @@ use Plack::Test;
 use FindBin;
 use Path::Class;
 use HTTP::Request::Common;
-use Class::Load qw(load_class);
 
 use Pinto::Tester;
 use Pinto::Server;
@@ -18,12 +17,16 @@ use Pinto::Constants qw(:all);
 #------------------------------------------------------------------------------
 # Setup...
 
+my %nostream = ();
+
 my $t    = Pinto::Tester->new();
 my %opts = (root => $t->pinto->root());
 my $app  = Pinto::Server->new(%opts)->to_app();
 
+START:
+
 #------------------------------------------------------------------------------
-# Tests...
+# Fetching a file...
 
 test_psgi
     app => $app,
@@ -48,16 +51,16 @@ test_psgi
     };
 
 #------------------------------------------------------------------------------
+# Adding an archive...
 
 test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
         my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
-        my $params  = {author => 'THEBARD', norecurse => 1, archive => [$archive]};
+        my $params  = {%nostream, author => 'THEBARD', norecurse => 1, archive => [$archive]};
         my $req     = POST( 'action/add', Content => $params);
         my $res     = $cb->($req);
-
         is $res->code, 200, 'Correct status code';
 
         is $res->header('Content-Type'), 'text/plain', 'Correct Type header';
@@ -67,23 +70,46 @@ test_psgi
 
         like $res->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
             'Response ends with epilogue';
+
+        #--------------------------------------------
+        # Add it again, and make sure we get an error
+
+        my $res2     = $cb->($req);
+        is $res2->code, 200, 'Correct status code';
+
+        is $res2->header('Content-Type'), 'text/plain', 'Correct Type header';
+
+        like $res2->content, qr{already exists},
+            'Response has Pinto error message';
+
+        like $res2->content, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
+            'Response starts with prologue';
+
+        unlike $res2->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
+            'Response ends with epilogue';
+
     };
 
 #------------------------------------------------------------------------------
+# Listing repository contents...
 
 test_psgi
     app => $app,
     client => sub {
-        my $cb   = shift;
-        my $req  = POST('action/list');
-        my $res  = $cb->($req);
+        my $cb  = shift;
+        my $params = {%nostream};
+        my $req    = POST('action/list', Content => $params);
+        my $res    = $cb->($req);
 
         is   $res->code, 200, 'Correct status code';
 
-        like $res->content, qr{Foo \s+ 0.7 \s+ T/TH/THEBARD/TestDist-1.0.tar.gz}x,
+        # Note that the lines of the listing itself should NOT contain
+        # the $PINTO_SERVER_RESPONSE_LINE_PREFIX in front of each line.
+
+        like $res->content, qr{^\@rl \s+ Foo \s+ 0.7 \s+ \S+ \n}mx,
             'Listing contains the Foo package';
 
-        like $res->content, qr{Bar \s+ 0.8 \s+ T/TH/THEBARD/TestDist-1.0.tar.gz}x,
+        like $res->content, qr{^\@rl \s+ Bar \s+ 0.8 \s+ \S+ \n}mx,
             'Listing contains the Bar package';
     };
 
@@ -93,8 +119,9 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $req = POST('action/purge', Content => {verbose => 3});
-        my $res = $cb->($req);
+        my $params = {%nostream, verbose => 3};
+        my $req    = POST('action/purge', Content => $params);
+        my $res    = $cb->($req);
 
         is   $res->code, 200, 'Correct status code';
 
@@ -129,9 +156,10 @@ test_psgi
 test_psgi
     app => $app,
     client => sub {
-        my $cb  = shift;
-        my $req = POST('action/bogus');
-        my $res = $cb->($req);
+        my $cb = shift;
+        my $params = {%nostream};
+        my $req    = POST('action/bogus', Content => $params);
+        my $res    = $cb->($req);
 
         my $content = $res->content;
 
@@ -144,6 +172,14 @@ test_psgi
         unlike $content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
             'Error response does not end with epilogue';
     };
+
+#------------------------------------------------------------------------------
+# Do all tests again, without streaming
+
+unless (%nostream) {
+    $nostream{nostream} = 1;
+    goto START;
+}
 
 #------------------------------------------------------------------------------
 

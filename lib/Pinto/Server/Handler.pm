@@ -71,7 +71,7 @@ sub _handle_post {
     }
 
     my $responder;
-    if ( $request->env->{'psgi.streaming'} && not $params{nostreaming} ) {
+    if ( $request->env->{'psgi.streaming'} && !$params{nostream} ) {
         require Pinto::Server::ActionResponder::Streaming;
         $responder = Pinto::Server::ActionResponder::Streaming->new(root => $self->root);
     }

@@ -18,6 +18,13 @@ use Pinto::Constants qw(:all);
 
 #------------------------------------------------------------------------------
 
+=attr root => $directory
+
+The root directory of your L<Pinto> repository.  This attribute is
+required.
+
+=cut
+
 has root  => (
    is       => 'ro',
    isa      => Dir,
@@ -27,17 +34,34 @@ has root  => (
 
 #-----------------------------------------------------------------------------
 
+=method respond( action => $action_name, params => \%params );
+
+Given an action name and a hash reference request parameters, performs
+the action and returns a PSGI-compatible response.  This is an
+abstract method that you must implement in a subclass.
+
+=cut
+
 sub respond { confess 'Abstract method' };
 
 #-----------------------------------------------------------------------------
 
+=method run_pinto( $action_name, $output_handle, %pinto_args )
+
+Given an action name and a hash of arguments for L<Pinto> runs the
+action and writes the output to the output handle.  This method takes
+care of adding the prologue and epilogue to the output.  Returns a
+true value if the action was entirely successful.
+
+=cut
+
 sub run_pinto {
-    my ($self, $action, %args) = @_;
+    my ($self, $action, $out, %args) = @_;
 
     $args{root} = $self->root;
     $args{log_prefix} = $PINTO_SERVER_RESPONSE_LINE_PREFIX;
 
-    print { $args{out} } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
+    print { $out } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
     my $result;
     try   {
@@ -47,7 +71,7 @@ sub run_pinto {
         $result = $pinto->run_actions();
     }
     catch {
-        print { $args{out}} $_;
+        print { $out } $_;
         $result = Pinto::Result->new();
         $result->add_exception($_);
     };
@@ -55,7 +79,7 @@ sub run_pinto {
     print { $args{out} } "$PINTO_SERVER_RESPONSE_EPILOGUE\n"
         if $result->is_success();
 
-    return $result;
+    return $result->is_success() ? 1 : 0;
 }
 
 #------------------------------------------------------------------------------
@@ -66,3 +90,10 @@ __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
+
+=pod
+
+=for stopwords params
+
+=cut
+

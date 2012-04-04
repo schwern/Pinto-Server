@@ -18,17 +18,17 @@ extends qw(Pinto::Server::ActionResponder);
 
 #------------------------------------------------------------------------------
 
-sub respond {
+override respond => sub {
     my ($self, %args) = @_;
 
     my $action = $args{action};
     my %params = %{ $args{params} };
 
     # Here's what's going on: Open a pipe (which has two endpoints),
-    # the fork.  The child process runs the Action and writes output
-    # to one end of the pipe.  Meanwhile, the parent reads input from
-    # the other end of the pipe and spits it into the response via
-    # callback.
+    # and then fork.  The child process runs the Action and writes all
+    # output to one end of the pipe.  Meanwhile, the parent reads
+    # input from the other end of the pipe and spits it into the
+    # response via callback.
 
     my $response;
     my $pipe = IO::Pipe->new();
@@ -38,8 +38,8 @@ sub respond {
             my $writer = $pipe->writer();
             $writer->autoflush(1);
             $params{out} = $writer;
-            my $result = $self->run_pinto($action, %params);
-            exit $result->is_success() ? 0 : 1;
+            my $success = $self->run_pinto($action, $writer, %params);
+            exit $success ? 0 : 1;
         }
         parent {
             my $child_pid = shift;
@@ -61,7 +61,7 @@ sub respond {
     };
 
     return $response;
-}
+};
 
 #------------------------------------------------------------------------------
 
