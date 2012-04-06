@@ -1,5 +1,11 @@
 {{$NEXT}}
 
+    No features or interface changes
+
+    Now requires Pinto 0.036 which as a different interface
+    for controlling where log messages go (Inspired by
+    Karen Etheridge).
+
 0.035     2012-04-04 20:35:00 America/Los_Angeles
 
     New Features:
