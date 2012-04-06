@@ -29,6 +29,9 @@ pod2usage(-message => 'Must specify a repository root') if not $opts{root};
 push @ARGV, ('--port' => Pinto::Server->default_port())
   if none { /^ --? p(?: ort)?/x } @ARGV;
 
+# TODO: Consider sending the server access log into the log directory
+# for the repository by default, so everything is in one place.
+
 my $runner = Plack::Runner->new();
 $runner->parse_options(@ARGV);
 
