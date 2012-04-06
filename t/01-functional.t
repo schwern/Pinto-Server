@@ -119,7 +119,7 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $params = {%nostream, verbose => 3};
+        my $params = {%nostream, verbose => 2};
         my $req    = POST('action/purge', Content => $params);
         my $res    = $cb->($req);
 
