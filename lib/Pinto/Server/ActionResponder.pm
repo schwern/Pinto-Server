@@ -100,7 +100,7 @@ sub make_logger {
     my $cb = sub { my %args = @_;
                    chomp (my $msg = $args{message});
                    my @lines = split m{\n}, $msg;
-                   $msg = join $PINTO_SERVER_RESPONSE_LINE_PREFIX, @lines;
+                   $msg = join "\n" . $PINTO_SERVER_RESPONSE_LINE_PREFIX, @lines;
                    return $PINTO_SERVER_RESPONSE_LINE_PREFIX . $msg . "\n" };
 
     my $logger = Log::Dispatch::Handle->new( min_level => $log_level,
