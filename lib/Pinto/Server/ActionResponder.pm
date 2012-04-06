@@ -98,10 +98,11 @@ sub make_logger {
     # TODO: Using a regex to squirt in the PREFIX might be faster
     # and more understandable that splitting and re-joining the string
     my $cb = sub { my %args = @_;
+                   my $level = uc $args{level};
                    chomp (my $msg = $args{message});
                    my @lines = split m{\n}, $msg;
                    $msg = join "\n" . $PINTO_SERVER_RESPONSE_LINE_PREFIX, @lines;
-                   return $PINTO_SERVER_RESPONSE_LINE_PREFIX . $msg . "\n" };
+                   return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n" };
 
     my $logger = Log::Dispatch::Handle->new( min_level => $log_level,
                                              handle    => $out,
