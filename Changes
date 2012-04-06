@@ -2,7 +2,7 @@
 
     No features or interface changes
 
-    Now requires Pinto 0.036 which as a different interface
+    Now requires Pinto 0.036 which has a different interface
     for controlling where log messages go (Inspired by
     Karen Etheridge).
 
