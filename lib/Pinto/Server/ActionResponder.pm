@@ -69,7 +69,7 @@ sub run_pinto {
     my $result;
     try   {
         my $pinto = Pinto->new(%args);
-        $pinto->add_logger($self->make_logger($out, %args));
+        $pinto->add_logger($self->_make_logger($out, %args));
         $pinto->new_batch(%args, noinit => 1);
         $pinto->add_action($action, %args);
         $result = $pinto->run_actions();
@@ -88,7 +88,7 @@ sub run_pinto {
 
 #------------------------------------------------------------------------------
 
-sub make_logger {
+sub _make_logger {
     my ($self, $out, %pinto_args) = @_;
 
     my $verbose   = $pinto_args{verbose} || 0;
@@ -97,10 +97,11 @@ sub make_logger {
 
     # TODO: Using a regex to squirt in the PREFIX might be faster
     # and more understandable that splitting and re-joining the string
+
     my $cb = sub { my %args = @_;
                    my $level = uc $args{level};
                    chomp (my $msg = $args{message});
-                   my @lines = split m{\n}, $msg;
+                   my @lines = split m{\n}x, $msg;
                    $msg = join "\n" . $PINTO_SERVER_RESPONSE_LINE_PREFIX, @lines;
                    return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n" };
 
