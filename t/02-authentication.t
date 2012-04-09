@@ -62,10 +62,8 @@ test_psgi
 
         ok $res->is_success, 'Request with correct password succeeded';
 
-        my $expected_content = "$PINTO_SERVER_RESPONSE_PROLOGUE\n"
-            . "$PINTO_SERVER_RESPONSE_EPILOGUE\n";
-
-        is $res->content, $expected_content, 'Expected content';
+        like $res->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
+            'Got epilogue';
     };
 
 test_psgi

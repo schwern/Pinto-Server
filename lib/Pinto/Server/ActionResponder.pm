@@ -6,7 +6,7 @@ use Moose;
 
 use Carp;
 use Try::Tiny;
-use List::Util qw(max);
+use List::Util qw(min);
 
 use Log::Dispatch::Handle;
 
@@ -39,9 +39,9 @@ has root  => (
 
 =method respond( action => $action_name, params => \%params );
 
-Given an action name and a hash reference request parameters, performs
-the action and returns a PSGI-compatible response.  This is an
-abstract method that you must implement in a subclass.
+Given a Pinto Action name and a hash reference request parameters,
+performs the Action and returns a PSGI-compatible response.  This is
+an abstract method that you must implement in a subclass.
 
 =cut
 
@@ -52,35 +52,35 @@ sub respond { confess 'Abstract method' };
 =method run_pinto( $action_name, $output_handle, %pinto_args )
 
 Given an Action name and a hash of arguments for L<Pinto>, runs the
-Action and writes the output to the output handle.  This method takes
-care of adding the prologue and epilogue to the output handle.  Any
-output produced by the Action will be written to the output
-handle. Returns a true value if the action was entirely successful.
+Action.  Any output and log messages from the Action will be written
+to the output handle.  This method takes care of adding the prologue
+and epilogue to the output handle.  Returns a true value if the action
+was entirely successful.
 
 =cut
 
 sub run_pinto {
-    my ($self, $action, $out, %args) = @_;
+    my ($self, $action, $output_handle, %args) = @_;
 
-    $args{root} = $self->root;
+    $args{root} ||= $self->root;
 
-    print { $out } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
+    print { $output_handle } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
     my $result;
     try   {
         my $pinto = Pinto->new(%args);
-        $pinto->add_logger($self->_make_logger($out, %args));
+        $pinto->add_logger($self->_make_logger($output_handle));
         $pinto->new_batch(%args, noinit => 1);
         $pinto->add_action($action, %args);
         $result = $pinto->run_actions();
     }
     catch {
-        print { $out } $_;
+        print { $output_handle } $_;
         $result = Pinto::Result->new();
         $result->add_exception($_);
     };
 
-    print { $args{out} } "$PINTO_SERVER_RESPONSE_EPILOGUE\n"
+    print { $output_handle } "$PINTO_SERVER_RESPONSE_EPILOGUE\n"
         if $result->is_success();
 
     return $result->is_success() ? 1 : 0;
@@ -89,23 +89,24 @@ sub run_pinto {
 #------------------------------------------------------------------------------
 
 sub _make_logger {
-    my ($self, $out, %pinto_args) = @_;
+    my ($self, $out) = @_;
 
-    my $verbose   = $pinto_args{verbose} || 0;
-    my $log_level = max(0, 2 - $verbose);    # Equivalent to 'notice'
-    $log_level    = 4 if $pinto_args{quiet}; # 'error' or higher
+    # Prepend all server log messages with a prefix so clients can
+    # distiguish log messages from regular output from the Action.
 
-    # TODO: Using a regex to squirt in the PREFIX might be faster
-    # and more understandable that splitting and re-joining the string
+    my $cb = sub {
+        my %args = @_;
+        my $level = uc $args{level};
+        chomp (my $msg = $args{message});
+        my @lines = split m{\n}x, $msg;
+        $msg = join "\n" . $PINTO_SERVER_RESPONSE_LINE_PREFIX, @lines;
+        return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n";
+    };
 
-    my $cb = sub { my %args = @_;
-                   my $level = uc $args{level};
-                   chomp (my $msg = $args{message});
-                   my @lines = split m{\n}x, $msg;
-                   $msg = join "\n" . $PINTO_SERVER_RESPONSE_LINE_PREFIX, @lines;
-                   return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n" };
+    # We're going to send all log messages to the client and let
+    # it decide which ones it wants to record or display.
 
-    my $logger = Log::Dispatch::Handle->new( min_level => $log_level,
+    my $logger = Log::Dispatch::Handle->new( min_level => 0,
                                              handle    => $out,
                                              callbacks => $cb );
 
