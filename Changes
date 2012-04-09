@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.036     2012-04-08 23:46:46 America/Los_Angeles
+
     If using Starman or Twiggy, Pinto will abort gracefully
     if the connection with the client is dropped (like if
     you press Ctrl-C when using pinto-remote).
