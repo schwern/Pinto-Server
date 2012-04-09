@@ -53,10 +53,16 @@ override respond => sub {
             my $io_handle = io_from_getline( $getline );
             my $headers   = ['Content-Type' => 'text/plain'];
 
-            # TODO: Need to figure out how to communicate a failure
-            # once we've started the stream.
+            # If the parent looses the connection (usually because the
+            # client at the other end was killed by Ctrl-C) then we
+            # will get a SIGPIPE.  At that point, we need to kill the
+            # child.  Not sure if parent should die too.
 
-            $response  = sub {$_[0]->( [200, $headers, $io_handle] )};
+            $response  = sub {
+                my $responder = shift;
+                local $SIG{PIPE} = sub { kill 2, $child_pid };
+                return $responder->( [200, $headers, $io_handle] );
+            };
         }
     };
 
