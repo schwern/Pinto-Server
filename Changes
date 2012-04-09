@@ -1,10 +1,15 @@
 {{$NEXT}}
 
-    No features or interface changes
+    If using Starman or Twiggy, Pinto will abort gracefully
+    if the connection with the client is dropped (like if
+    you press Ctrl-C when using pinto-remote).
 
     Now requires Pinto 0.036 which has a different interface
     for controlling where log messages go (Inspired by
     Karen Etheridge).
+
+    Added Authen::Simple::Passwd as test prereq to fix build failures
+    (Thanks CPAN Testers!)
 
 0.035     2012-04-04 20:35:00 America/Los_Angeles
 
