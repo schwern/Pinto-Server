@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.037     2012-04-09 12:57:50 America/Los_Angeles
+
     Now sends all log messages (at any level) to the client.  It
     is up to the client to decide which ones it wants to record
     or display.
