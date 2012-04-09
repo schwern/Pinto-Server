@@ -86,7 +86,7 @@ test_psgi
             'Response starts with prologue';
 
         unlike $res2->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
-            'Response ends with epilogue';
+            'Error response does not end with epilogue';
 
     };
 
