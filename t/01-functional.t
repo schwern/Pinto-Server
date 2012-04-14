@@ -40,10 +40,10 @@ test_psgi
         is $res->header('Content-Type'), 'application/x-gzip',
             'Correct Type header';
 
-        ok $res->header('Content-Length') > 300,
+        cmp_ok $res->header('Content-Length'), '>=', 300,
             'Reasonable Length header'; # Actual length may vary
 
-        ok $res->header('Content-Length') < 400,
+        cmp_ok $res->header('Content-Length'), '<', 400,
             'Reasonable Length header'; # Actual length may vary
 
         is $res->header('Content-Length'), length $res->content,
