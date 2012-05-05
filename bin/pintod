@@ -1,7 +1,7 @@
 #!/usr/bin/env perl
 
-# ABSTRACT: provide a web interface to a Pinto repository
-# PODNAME: pinto-server
+# ABSTRACT: the pinto web server
+# PODNAME: pintod
 
 use strict;
 use warnings;
@@ -49,18 +49,17 @@ __END__
 
 =head1 SYNOPSIS
 
-  pinto-server --root=/path/to/repository [--daemon] [--port=N]
+  pintod --root=/path/to/repository [--daemon] [--port=N]
 
 =head1 DESCRIPTION
 
-Before running C<pinto-server> you must first create a Pinto
-repository.  See L<pinto-admin> for instructions on that.
+Before running C<pintod> you must first create a Pinto
+repository.  See L<pinto> for instructions on that.
 
-C<pinto-server> provides a web API to a L<Pinto> repository.  Remote
-clients (like L<pinto-remote>) can use this API to add distributions,
-remove packages, and list the contents of the Pinto repository.  In
-addition, C<pinto-server> serves up the contents of your repository, so
-you can use it as the source of distributions for L<cpan> or L<cpanm>.
+C<pintod> provides a web API to a L<Pinto> repository.  Clients (like
+L<pinto>) can use this API to manage and inspect the repository.  In
+addition, C<pintod> serves up the distributions within repository, so
+you can use it as the backend for L<cpan> or L<cpanm>.
 
 =head1 ARGUMENTS
 
@@ -108,7 +107,7 @@ L<Plack::Runner>.
 
 =head1 DEPLOYMENT
 
-C<pinto-server> is PSGI compatible, running under L<Plack::Runner> by
+C<pintod> is PSGI compatible, running under L<Plack::Runner> by
 default.  It will use whatever backend you specify on the command line
 or have configured in your environment.
 
@@ -116,7 +115,7 @@ If you wish to add your own middleware and/or customize the backend in
 other ways, you can use L<Pinto::Server> in a custom .psgi script like
 this:
 
-    # my-pinto-server.psgi
+    # my-pintod.psgi
 
     my %opts   = (...);
     my $server = Pinto::Server->new(%opts);
@@ -126,21 +125,7 @@ this:
     # insert code customized for your backend
     # which operates on the $app
 
-Then you may directly launch F<my-pinto-server.psgi> using L<plackup>.
-
-
-=head1 CAVEATS
-
-If you are running C<pinto-server> and have configured L<Pinto> to use
-a VCS-based store, such as L<Pinto::Store::VCS::Svn> or
-L<Pinto::Store::VCS::Git>, then you must not mess with the VCS
-directly (at least not the part of the VCS that holds the Pinto
-repository).  This is because C<pinto-server> only initializes the
-working copy of the repository at startup.  Thereafter, it assumes
-that it is the only actor affecting the Pinto repository within the
-VCS.  If you start modifying Pinto's area of the VCS directly, then
-the working copy for C<pinto-server> will become out of date and
-conflicts will happen.
+Then you may directly launch F<my-pintod.psgi> using L<plackup>.
 
 =cut
 
