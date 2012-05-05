@@ -130,11 +130,10 @@ sub prepare_app {
     my ($self) = @_;
 
     my $root = $self->root();
-    print "Initializing pinto repository at $root\n" if is_interactive();
+    print "Initializing pinto repository at $root\n" if is_interactive;
 
-    my $pinto  = Pinto->new(root => $self->root);
-    my $result = $pinto->new_batch(noinit => 0)->add_action('Nop')->run_actions;
-    confess $result if not $result->is_success;
+    my $result = Pinto->new(root => $self->root)->run('Nop');
+    confess $result if not $result->was_successful;
 
     return $self;
 }

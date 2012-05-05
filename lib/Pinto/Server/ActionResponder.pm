@@ -74,14 +74,13 @@ sub run_pinto {
     }
     catch {
         print { $output_handle } $_;
-        $result = Pinto::Result->new();
-        $result->add_exception($_);
+        $result = Pinto::Result->new->failed;
     };
 
     print { $output_handle } "$PINTO_SERVER_RESPONSE_EPILOGUE\n"
-        if $result->is_success();
+        if $result->was_successful;
 
-    return $result->is_success() ? 1 : 0;
+    return $result->was_successful;
 }
 
 #------------------------------------------------------------------------------
