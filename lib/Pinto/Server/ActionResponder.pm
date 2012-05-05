@@ -70,9 +70,7 @@ sub run_pinto {
     try   {
         my $pinto = Pinto->new(%args);
         $pinto->add_logger($self->_make_logger($output_handle));
-        $pinto->new_batch(%args, noinit => 1);
-        $pinto->add_action($action, %args);
-        $result = $pinto->run_actions();
+        $result = $pinto->run($action => %args);
     }
     catch {
         print { $output_handle } $_;
