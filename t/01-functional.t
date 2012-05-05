@@ -64,7 +64,6 @@ test_psgi
         my $res     = $cb->($req);
         is $res->code, 200, 'Correct status code';
 
-        $DB::single =1;
         is $res->header('Content-Type'), 'text/plain', 'Correct Type header';
 
         like $res->content, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
