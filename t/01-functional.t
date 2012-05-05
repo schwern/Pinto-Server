@@ -17,13 +17,14 @@ use Pinto::Constants qw(:all);
 #------------------------------------------------------------------------------
 # Setup...
 
+
 my %nostream = ();
+
+START:
 
 my $t    = Pinto::Tester->new();
 my %opts = (root => $t->pinto->root());
 my $app  = Pinto::Server->new(%opts)->to_app();
-
-START:
 
 #------------------------------------------------------------------------------
 # Fetching a file...
@@ -58,11 +59,12 @@ test_psgi
     client => sub {
         my $cb  = shift;
         my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
-        my $params  = {%nostream, author => 'THEBARD', norecurse => 1, archive => [$archive]};
+        my $params  = {%nostream, author => 'THEBARD', norecurse => 1, archives => [$archive]};
         my $req     = POST( 'action/add', Content => $params);
         my $res     = $cb->($req);
         is $res->code, 200, 'Correct status code';
 
+        $DB::single =1;
         is $res->header('Content-Type'), 'text/plain', 'Correct Type header';
 
         like $res->content, qr{^$PINTO_SERVER_RESPONSE_PROLOGUE\n},
@@ -106,36 +108,11 @@ test_psgi
         # Note that the lines of the listing itself should NOT contain
         # the $PINTO_SERVER_RESPONSE_LINE_PREFIX in front of each line.
 
-        like $res->content, qr{^\@rl \s+ Foo \s+ 0.7 \s+ \S+ \n}mx,
+        like $res->content, qr{^rl \s+ Foo \s+ 0.7 \s+ \S+ \n}mx,
             'Listing contains the Foo package';
 
-        like $res->content, qr{^\@rl \s+ Bar \s+ 0.8 \s+ \S+ \n}mx,
+        like $res->content, qr{^rl \s+ Bar \s+ 0.8 \s+ \S+ \n}mx,
             'Listing contains the Bar package';
-    };
-
-#------------------------------------------------------------------------------
-
-test_psgi
-    app => $app,
-    client => sub {
-        my $cb  = shift;
-        my $params = {%nostream, verbose => 2};
-        my $req    = POST('action/purge', Content => $params);
-        my $res    = $cb->($req);
-
-        is   $res->code, 200, 'Correct status code';
-
-        like $res->content, qr{Process \d+ got the lock},
-            'Content includes log messages when verbose';
-
-        my $content = $res->content;
-        chomp $content;
-
-        my @lines = split m{\n}, $content;
-        ok @lines > 3, 'Got a reasonable number of lines'; # May vary
-
-        like $_, qr{^$PINTO_SERVER_RESPONSE_LINE_PREFIX},
-            'Log line starts with prefix' for @lines;
     };
 
 #------------------------------------------------------------------------------
