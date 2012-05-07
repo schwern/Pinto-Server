@@ -72,7 +72,7 @@ will do the work of processing the request and returning a response.
 has handler => (
     is      => 'ro',
     isa     => 'Pinto::Server::Handler',
-    builder => '_build_handler',
+    default => sub { Pinto::Server::Handler->new(root => $_[0]->root) },
     lazy    => 1,
 );
 
@@ -93,18 +93,9 @@ class_has default_port => (
 
 #-------------------------------------------------------------------------------
 
-sub _build_handler {
-    my ($self) = @_;
-
-    return Pinto::Server::Handler->new(root => $self->root);
-}
-
-#-------------------------------------------------------------------------------
-
 sub to_app {
     my ($self) = @_;
 
-    $self->prepare_app;
     my $app = sub { $self->call(@_) };
 
     if (my %auth_options = $self->auth_options) {
@@ -113,7 +104,7 @@ sub to_app {
             or carp 'No auth backend provided!';
 
         my $class = 'Authen::Simple::' . $backend;
-        print "Authenticating using $class\n" if is_interactive();
+        print "Authenticating using $class\n" if is_interactive;
         load_class($class);
 
         $app = Plack::Middleware::Auth::Basic->wrap($app,
@@ -125,28 +116,13 @@ sub to_app {
 
 #-------------------------------------------------------------------------------
 
-sub prepare_app {
-
-    my ($self) = @_;
-
-    my $root = $self->root();
-    print "Initializing pinto repository at $root\n" if is_interactive;
-
-    my $result = Pinto->new(root => $self->root)->run('Nop');
-    confess $result if not $result->was_successful;
-
-    return $self;
-}
-
-#-------------------------------------------------------------------------------
-
 sub call {
     my ($self, $env) = @_;
 
     my $request  = Plack::Request->new($env);
     my $response = $self->handler->handle($request);
 
-    $response = $response->finalize()
+    $response = $response->finalize
         if blessed($response) && $response->can('finalize');
 
     return $response;
@@ -161,7 +137,7 @@ __END__
 
 There is nothing to see here.
 
-Look at L<pinto-server> if you want to start the server.
+Look at L<pintod> if you want to start the server.
 
 =cut
 
