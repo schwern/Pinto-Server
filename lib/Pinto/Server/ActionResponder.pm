@@ -49,7 +49,7 @@ sub respond { confess 'Abstract method' };
 
 #-----------------------------------------------------------------------------
 
-=method run_pinto( $action_name, $output_handle, %pinto_args )
+=method run_pinto( $action_name, $output_handle, $args )
 
 Given an Action name and a hash of arguments for L<Pinto>, runs the
 Action.  Any output and log messages from the Action will be written
@@ -60,17 +60,17 @@ was entirely successful.
 =cut
 
 sub run_pinto {
-    my ($self, $action, $output_handle, %args) = @_;
+    my ($self, $action, $output_handle, $args) = @_;
 
-    $args{root} ||= $self->root;
+    $args->{root} ||= $self->root;
 
     print { $output_handle } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
     my $result;
     try   {
-        my $pinto = Pinto->new(%args);
+        my $pinto = Pinto->new($args);
         $pinto->add_logger($self->_make_logger($output_handle));
-        $result = $pinto->run($action => %args);
+        $result = $pinto->run($action => %{ $args });
     }
     catch {
         print { $output_handle } $_;

@@ -33,7 +33,7 @@ is a class attribute.
 
 There is nothing to see here.
 
-Look at [pinto-server](http://search.cpan.org/perldoc?pinto-server) if you want to start the server.
+Look at [pintod](http://search.cpan.org/perldoc?pintod) if you want to start the server.
 
 # SUPPORT
 

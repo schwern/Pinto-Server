@@ -6,6 +6,7 @@ use warnings;
 use Test::More;
 use Plack::Test;
 
+use JSON;
 use FindBin;
 use Path::Class;
 use HTTP::Request::Common;
@@ -60,7 +61,7 @@ test_psgi
         my $cb  = shift;
         my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
         my $params  = {%nostream, author => 'THEBARD', norecurse => 1, archives => [$archive]};
-        my $req     = POST( 'action/add', Content => $params);
+        my $req     = POST( 'action/add', Content => {args => encode_json($params)} );
         my $res     = $cb->($req);
         is $res->code, 200, 'Correct status code';
 
@@ -99,7 +100,7 @@ test_psgi
     client => sub {
         my $cb  = shift;
         my $params = {%nostream};
-        my $req    = POST('action/list', Content => $params);
+        my $req    = POST('action/list', Content => {args => encode_json($params)});
         my $res    = $cb->($req);
 
         is   $res->code, 200, 'Correct status code';
@@ -134,7 +135,7 @@ test_psgi
     client => sub {
         my $cb = shift;
         my $params = {%nostream};
-        my $req    = POST('action/bogus', Content => $params);
+        my $req    = POST('action/bogus', Content => {args => encode_json($params)});
         my $res    = $cb->($req);
 
         my $content = $res->content;

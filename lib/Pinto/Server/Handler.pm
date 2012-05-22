@@ -5,6 +5,7 @@ package Pinto::Server::Handler;
 use Moose;
 
 use Carp;
+use JSON;
 use Plack::MIME;
 use Path::Class;
 use File::Copy;
@@ -57,8 +58,9 @@ sub handle {
 sub _handle_post {
     my ($self, $request) = @_;
 
-    my %params = %{ $request->parameters() };
-    my $action = _parse_action_from_path($request->path_info);
+    my %params      = %{ $request->parameters() }; # Copying
+    my $action      = _parse_action_from_path($request->path_info);
+    my $action_args = $params{args} ? decode_json( $params{args} ) : {};
 
     if (my $uploads = $request->uploads) {
         for my $upload_name ( $uploads->keys ) {
@@ -66,7 +68,7 @@ sub _handle_post {
             my $filename = $upload->filename;
             my $file     = file($upload->path)->dir->file($filename);
             File::Copy::move( $upload->path, $file); #TODO: autodie
-            $params{$upload_name} = $file;
+            $action_args->{$upload_name} = $file;
         }
     }
 
@@ -80,7 +82,7 @@ sub _handle_post {
         $responder = Pinto::Server::ActionResponder::Splatting->new(root => $self->root);
     }
 
-    return $responder->respond(action => $action, params => \%params);
+    return $responder->respond(action => $action, params => $action_args);
 }
 
 #-------------------------------------------------------------------------------
