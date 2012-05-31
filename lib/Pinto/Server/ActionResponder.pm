@@ -79,14 +79,15 @@ sub run_pinto {
 
     my $args = $self->args;
     $args->{root} ||= $self->root;
-    $args->{out} = $output_handle;
+    $args->{out}  ||= $output_handle;
 
     print { $output_handle } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
     my $result;
     try   {
         my $pinto = Pinto->new($args);
-        $pinto->add_logger($self->_make_logger($output_handle));
+        my $log_level = $args->{log_level} || 'notice';
+        $pinto->add_logger($self->_make_logger($output_handle, $log_level));
         $result = $pinto->run($self->action => %{ $args });
     }
     catch {
@@ -104,7 +105,7 @@ sub run_pinto {
 #------------------------------------------------------------------------------
 
 sub _make_logger {
-    my ($self, $out) = @_;
+    my ($self, $output_handle, $log_level) = @_;
 
     # Prepend all server log messages with a prefix so clients can
     # distiguish log messages from regular output from the Action.
@@ -121,8 +122,8 @@ sub _make_logger {
     # We're going to send all log messages to the client and let
     # it decide which ones it wants to record or display.
 
-    my $logger = Log::Dispatch::Handle->new( min_level => 0,
-                                             handle    => $out,
+    my $logger = Log::Dispatch::Handle->new( min_level => $log_level,
+                                             handle    => $output_handle,
                                              callbacks => $cb );
 
     return $logger;
