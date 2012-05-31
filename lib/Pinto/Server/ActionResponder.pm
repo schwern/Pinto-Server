@@ -3,6 +3,7 @@
 package Pinto::Server::ActionResponder;
 
 use Moose;
+use MooseX::Types::Moose qw(Str HashRef);
 
 use Carp;
 use Try::Tiny;
@@ -35,6 +36,20 @@ has root  => (
    coerce   => 1,
 );
 
+
+has action => (
+   is        => 'ro',
+   isa       => Str,
+   required  => 1,
+);
+
+
+has args => (
+    is     => 'ro',
+    isa    => HashRef,
+    default => sub { {} },
+);
+
 #-----------------------------------------------------------------------------
 
 =method respond( action => $action_name, params => \%params );
@@ -60,9 +75,11 @@ was entirely successful.
 =cut
 
 sub run_pinto {
-    my ($self, $action, $output_handle, $args) = @_;
+    my ($self, $output_handle) = @_;
 
+    my $args = $self->args;
     $args->{root} ||= $self->root;
+    $args->{out} = $output_handle;
 
     print { $output_handle } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
@@ -70,9 +87,10 @@ sub run_pinto {
     try   {
         my $pinto = Pinto->new($args);
         $pinto->add_logger($self->_make_logger($output_handle));
-        $result = $pinto->run($action => %{ $args });
+        $result = $pinto->run($self->action => %{ $args });
     }
     catch {
+        print $_;
         print { $output_handle } $_;
         $result = Pinto::Result->new->failed;
     };

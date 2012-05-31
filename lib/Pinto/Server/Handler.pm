@@ -9,10 +9,10 @@ use JSON;
 use Plack::MIME;
 use Path::Class;
 use File::Copy;
+use Class::Load;
 use Plack::Response;
 
 use Pinto::Types qw(Dir);
-
 
 #-------------------------------------------------------------------------------
 
@@ -59,30 +59,25 @@ sub _handle_post {
     my ($self, $request) = @_;
 
     my %params      = %{ $request->parameters() }; # Copying
-    my $action      = _parse_action_from_path($request->path_info);
+    my $action_name = _parse_action_from_path($request->path_info);
     my $action_args = $params{args} ? decode_json( $params{args} ) : {};
 
-    if (my $uploads = $request->uploads) {
-        for my $upload_name ( $uploads->keys ) {
-            my $upload   = $uploads->{$upload_name};
-            my $filename = $upload->filename;
-            my $file     = file($upload->path)->dir->file($filename);
-            File::Copy::move( $upload->path, $file); #TODO: autodie
-            $action_args->{$upload_name} = $file;
-        }
+    for my $upload_name ( $request->uploads->keys ) {
+        my $upload    = $request->uploads->{$upload_name};
+        my $basename  = $upload->filename;
+        my $localfile = file($upload->path)->dir->file($basename);
+        File::Copy::move($upload->path, $localfile); #TODO: autodie
+        $action_args->{$upload_name} = $localfile;
     }
 
-    my $responder;
-    if ( $request->env->{'psgi.streaming'} && !$params{nostream} ) {
-        require Pinto::Server::ActionResponder::Streaming;
-        $responder = Pinto::Server::ActionResponder::Streaming->new(root => $self->root);
-    }
-    else {
-        require Pinto::Server::ActionResponder::Splatting;
-        $responder = Pinto::Server::ActionResponder::Splatting->new(root => $self->root);
-    }
+    my $responder_class = 'Pinto::Server::ActionResponder::' .
+      (($request->env->{'psgi.streaming'} and not $params{nostream}) ? 'Streaming' : 'Splatting');
 
-    return $responder->respond(action => $action, params => $action_args);
+    Class::Load::load_class($responder_class);
+    my $responder = $responder_class->new(root   => $self->root,
+                                          action => $action_name,
+                                          args   => $action_args);
+    return $responder->respond;
 }
 
 #-------------------------------------------------------------------------------
@@ -90,13 +85,22 @@ sub _handle_post {
 sub _handle_get {
     my ($self, $request) = @_;
 
-    my $file = file( $self->root(), $request->path_info() );
+    # path_info always has a leading slash
+    my (undef, $stack, @path_parts) = split '/', $request->path_info;
+
+    if ($path_parts[-1] eq '02packages.details.txt.gz') {
+       require Pinto::Server::IndexResponder;
+       my $responder = Pinto::Server::IndexResponder->new(root => $self->root, stack => $stack);
+       return $responder->respond;
+    }
+
+    my $file = file($self->root, @path_parts);
     return $self->_error_response(404, "File $file not found") if not -e $file;
 
     my $response = Plack::Response->new();
     $response->content_type( Plack::MIME->mime_type($file) );
     $response->content_length( -s $file );
-    $response->body( $file->openr() );
+    $response->body( $file->openr );
     $response->status(200);
 
     return $response;

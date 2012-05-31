@@ -23,18 +23,18 @@ my %nostream = ();
 
 START:
 
-my $t    = Pinto::Tester->new();
-my %opts = (root => $t->pinto->root());
-my $app  = Pinto::Server->new(%opts)->to_app();
+my $t    = Pinto::Tester->new;
+my %opts = (root => $t->pinto->root);
+my $app  = Pinto::Server->new(%opts)->to_app;
 
 #------------------------------------------------------------------------------
-# Fetching a file...
+# Fetching an index...
 
 test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $req = GET('modules/02packages.details.txt.gz');
+        my $req = GET('init/modules/02packages.details.txt.gz');
         my $res = $cb->($req);
 
         is $res->code, 200, 'Correct status code';
@@ -42,7 +42,7 @@ test_psgi
         is $res->header('Content-Type'), 'application/x-gzip',
             'Correct Type header';
 
-        cmp_ok $res->header('Content-Length'), '>=', 300,
+        cmp_ok $res->header('Content-Length'), '>=', 250,
             'Reasonable Length header'; # Actual length may vary
 
         cmp_ok $res->header('Content-Length'), '<', 400,
@@ -91,6 +91,30 @@ test_psgi
             'Error response does not end with epilogue';
 
     };
+
+#------------------------------------------------------------------------------
+# Fetching the archive...
+
+test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
+        my $req = GET('init/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz');
+        my $res = $cb->($req);
+
+        is $res->code, 200, 'Correct status code';
+
+        is $res->header('Content-Type'), 'application/x-gzip',
+            'Correct Type header';
+
+        is $res->header('Content-Length'), -s $archive,
+            'Length header matches file size';
+
+        is $res->header('Content-Length'), length $res->content,
+            'Length header matches actual length';
+    };
+
 
 #------------------------------------------------------------------------------
 # Listing repository contents...
@@ -160,7 +184,7 @@ unless (%nostream) {
 
 #------------------------------------------------------------------------------
 
-done_testing();
+done_testing;
 
 
 

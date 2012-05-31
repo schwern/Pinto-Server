@@ -18,21 +18,17 @@ extends qw(Pinto::Server::ActionResponder);
 #------------------------------------------------------------------------------
 
 override respond => sub {
-    my ($self, %args) = @_;
-
-    my $action = $args{action};
-    my %params = %{ $args{params} };
+    my ($self) = @_;
 
     my $buffer   = '';
     my $out      = IO::String->new( \$buffer );
-    $params{out} = $out;
 
-    $self->run_pinto($action, $out, %params);
+    $self->run_pinto($out);
     my $response = Plack::Response->new(200, undef, $buffer);
     $response->content_length(length $buffer);
     $response->content_type('text/plain');
 
-    return $response->finalize();
+    return $response->finalize;
 };
 
 #------------------------------------------------------------------------------

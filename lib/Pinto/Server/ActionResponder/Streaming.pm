@@ -19,10 +19,7 @@ extends qw(Pinto::Server::ActionResponder);
 #------------------------------------------------------------------------------
 
 override respond => sub {
-    my ($self, %args) = @_;
-
-    my $action_name = $args{action};
-    my $action_args = $args{params};;
+    my ($self) = @_;
 
     # Here's what's going on: Open a pipe (which has two endpoints),
     # and then fork.  The child process runs the Action and writes all
@@ -37,8 +34,7 @@ override respond => sub {
         child {
             my $writer = $pipe->writer();
             $writer->autoflush(1);
-            $action_args->{out} = $writer;
-            my $success = $self->run_pinto($action_name, $writer, $action_args);
+            my $success = $self->run_pinto($writer);
             exit $success ? 0 : 1;
         }
         parent {
