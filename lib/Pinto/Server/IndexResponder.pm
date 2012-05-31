@@ -1,4 +1,4 @@
-# ABSTRACT: Base class for responding to Action requests
+# ABSTRACT: Responds to requests for a repository index
 
 package Pinto::Server::IndexResponder;
 
@@ -42,11 +42,17 @@ the default stack.
 
 has stack  => (
    is       => 'ro',
-   isa      => Undef | StackName,
+   isa      => Undef | StackName,  ## no critic qw(Bitwise)
    coerce   => 1,
 );
 
 #------------------------------------------------------------------------------
+
+=method respond
+
+Returns a PSGI-compatible response containing the index for the stack.
+
+=cut
 
 sub respond {
     my ($self) = @_;
@@ -79,7 +85,7 @@ __END__
 
 =pod
 
-=for stopwords params
+=for stopwords
 
 =cut
 

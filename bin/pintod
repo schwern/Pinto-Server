@@ -47,6 +47,8 @@ __END__
 
 =pod
 
+=for stopwords pintod
+
 =head1 SYNOPSIS
 
   pintod --root=/path/to/repository [--daemon] [--port=N]
