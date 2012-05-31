@@ -1,5 +1,11 @@
 {{$NEXT}}
 
+    Pinto::Server now supports stacks, and requires Pinto version
+    0.043 or newer.  Clients must also use Pinto::Remote version 0.041
+    or newer.
+
+    The "pinto-server" command has been renamed to "pintod".
+
 0.037     2012-04-09 12:57:50 America/Los_Angeles
 
     Now sends all log messages (at any level) to the client.  It
