@@ -6,6 +6,7 @@ use Moose;
 
 use JSON;
 use IO::Pipe;
+use Try::Tiny;
 use File::Temp;
 use File::Copy;
 use Proc::Fork;
@@ -13,6 +14,7 @@ use Path::Class;
 use Plack::Response;
 use IO::Handle::Util qw(io_from_getline);
 
+use Pinto::Result;
 use Pinto::Constants qw(:all);
 
 #-------------------------------------------------------------------------------
@@ -52,7 +54,6 @@ sub _run_action {
 
     my $response;
     my $pipe = IO::Pipe->new;
-    $DB::single = 1;
 
     run_fork {
         child {
@@ -60,9 +61,13 @@ sub _run_action {
             $action_args->{out} ||= $writer;
 
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
-            $self->pinto->run(ucfirst $action_name => %{ $action_args });
-            print { $writer } "$PINTO_SERVER_RESPONSE_EPILOGUE\n";
-            exit 0;
+
+            my $result =
+                try   { $self->pinto->run(ucfirst $action_name => %{ $action_args }) }
+                catch { print { $writer } $_; Pinto::Result->new->failed };
+
+            print { $writer } "$PINTO_SERVER_RESPONSE_EPILOGUE\n" if $result->was_successful;
+            exit $result->was_successful ? 0 : 1;
         }
         parent {
             my $child_pid = shift;
