@@ -9,11 +9,9 @@ use MooseX::Types::Moose qw(Int HashRef);
 
 use Carp;
 use Path::Class;
+use Class::Load;
 use Scalar::Util qw(blessed);
-use Class::Load qw(load_class);
 use IO::Interactive qw(is_interactive);
-
-use Plack::Request;
 use Plack::Middleware::Auth::Basic;
 
 use Pinto;
@@ -45,6 +43,10 @@ has root  => (
    required => 1,
    coerce   => 1,
 );
+
+=attr pinto
+
+=cut
 
 
 has pinto => (
@@ -112,7 +114,7 @@ sub to_app {
 
         my $class = 'Authen::Simple::' . $backend;
         print "Authenticating using $class\n" if is_interactive;
-        load_class($class);
+        Class::Load::load_class($class);
 
         $app = Plack::Middleware::Auth::Basic->wrap($app,
             authenticator => $class->new(%auth_options) );
