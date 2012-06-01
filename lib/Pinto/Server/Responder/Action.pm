@@ -74,7 +74,7 @@ sub _run_action {
             my $reader    = $pipe->reader;
 
             # In Plack::Util::foreach(), input is buffered at 65536
-            # bytes We want to buffer each line only.  So we make our
+            # bytes. We want to buffer each line only.  So we make our
             # own input handle with $/ set accordingly.
 
             my $getline   = sub { local $/ = "\n"; $reader->getline };
