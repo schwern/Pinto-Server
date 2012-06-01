@@ -18,11 +18,6 @@ use Pinto::Constants qw(:all);
 #------------------------------------------------------------------------------
 # Setup...
 
-
-my %nostream = ();
-
-START:
-
 my $t    = Pinto::Tester->new;
 my %opts = (root => $t->pinto->root);
 my $app  = Pinto::Server->new(%opts)->to_app;
@@ -60,7 +55,7 @@ test_psgi
     client => sub {
         my $cb  = shift;
         my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
-        my $params  = {%nostream, author => 'THEBARD', norecurse => 1, archives => [$archive]};
+        my $params  = {author => 'THEBARD', norecurse => 1, archives => [$archive]};
         my $req     = POST( 'action/add', Content => {args => encode_json($params)} );
         my $res     = $cb->($req);
         is $res->code, 200, 'Correct status code';
@@ -123,7 +118,7 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $params = {%nostream};
+        my $params = {};
         my $req    = POST('action/list', Content => {args => encode_json($params)});
         my $res    = $cb->($req);
 
@@ -158,7 +153,7 @@ test_psgi
     app => $app,
     client => sub {
         my $cb = shift;
-        my $params = {%nostream};
+        my $params = {};
         my $req    = POST('action/bogus', Content => {args => encode_json($params)});
         my $res    = $cb->($req);
 
@@ -173,14 +168,6 @@ test_psgi
         unlike $content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
             'Error response does not end with epilogue';
     };
-
-#------------------------------------------------------------------------------
-# Do all tests again, without streaming
-
-unless (%nostream) {
-    $nostream{nostream} = 1;
-    goto START;
-}
 
 #------------------------------------------------------------------------------
 

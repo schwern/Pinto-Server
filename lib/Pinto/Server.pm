@@ -19,7 +19,7 @@ use Plack::Middleware::Auth::Basic;
 use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Constants qw($PINTO_SERVER_DEFAULT_PORT);
-use Pinto::Server::Handler;
+use Pinto::Server::Router;
 
 #-------------------------------------------------------------------------------
 
@@ -46,6 +46,13 @@ has root  => (
    coerce   => 1,
 );
 
+
+has pinto => (
+    is     => 'ro',
+    isa    => 'Pinto',
+    default => sub { Pinto->new(root => $_[0]->root) },
+);
+
 =attr auth
 
 The hashref of authentication options, if authentication is to be used within
@@ -62,17 +69,17 @@ has auth => (
     handles => { auth_options => 'elements' },
 );
 
-=attr handler
+=attr router
 
 An object that does the L<Pinto::Server::Handler> role.  This object
 will do the work of processing the request and returning a response.
 
 =cut
 
-has handler => (
+has router => (
     is      => 'ro',
-    isa     => 'Pinto::Server::Handler',
-    default => sub { Pinto::Server::Handler->new(root => $_[0]->root) },
+    isa     => 'Pinto::Server::Router',
+    default => sub { Pinto::Server::Router->new },
     lazy    => 1,
 );
 
@@ -119,11 +126,8 @@ sub to_app {
 sub call {
     my ($self, $env) = @_;
 
-    my $request  = Plack::Request->new($env);
-    my $response = $self->handler->handle($request);
-
-    $response = $response->finalize
-        if blessed($response) && $response->can('finalize');
+    my $response = $self->router->route($env, $self->pinto);
+    $response = $response->finalize if blessed($response) && $response->can('finalize');
 
     return $response;
 }
