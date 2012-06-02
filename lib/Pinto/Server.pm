@@ -14,7 +14,6 @@ use Scalar::Util qw(blessed);
 use IO::Interactive qw(is_interactive);
 use Plack::Middleware::Auth::Basic;
 
-use Pinto;
 use Pinto::Types qw(Dir);
 use Pinto::Constants qw($PINTO_SERVER_DEFAULT_PORT);
 use Pinto::Server::Router;
@@ -42,17 +41,6 @@ has root  => (
    isa      => Dir,
    required => 1,
    coerce   => 1,
-);
-
-=attr pinto
-
-=cut
-
-
-has pinto => (
-    is     => 'ro',
-    isa    => 'Pinto',
-    default => sub { Pinto->new(root => $_[0]->root) },
 );
 
 =attr auth
@@ -128,8 +116,10 @@ sub to_app {
 sub call {
     my ($self, $env) = @_;
 
-    my $response = $self->router->route($env, $self->pinto);
-    $response = $response->finalize if blessed($response) && $response->can('finalize');
+    my $response = $self->router->route($env, $self->root);
+
+    $response = $response->finalize
+      if blessed($response) && $response->can('finalize');
 
     return $response;
 }
