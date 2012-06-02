@@ -12,6 +12,7 @@ use File::Copy;
 use Proc::Fork;
 use Path::Class;
 use Plack::Response;
+use Log::Dispatch::Handle;
 use IO::Handle::Util qw(io_from_getline);
 
 use Pinto::Result;
@@ -62,6 +63,9 @@ sub _run_action {
 
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
+            my $logger = $self->_make_logger($action_args->{log_level}, $writer);
+            $self->pinto->add_logger($logger);
+
             my $result =
                 try   { $self->pinto->run(ucfirst $action_name => %{ $action_args }) }
                 catch { print { $writer } $_; Pinto::Result->new->failed };
@@ -96,6 +100,37 @@ sub _run_action {
 
     return $response;
  }
+
+#-------------------------------------------------------------------------------
+
+sub _make_logger {
+    my ($self, $log_level, $output_handle) = @_;
+
+    # This callback prepends the special token "## LEVEL:" to each log
+    # message, so that clients can distinguish log messages from
+    # regular output, and re-log the message accordingly.
+
+    my $cb = sub {
+        my %args = @_;
+        my $level = uc $args{level};
+        chomp (my $msg = $args{message});
+        $msg =~ s{\n}{\n\Q$PINTO_SERVER_RESPONSE_LINE_PREFIX$level: \E}g;
+        return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n";
+    };
+
+
+    # The log_level could be a number (0-6) or a string (e.g. debug,
+    # warn, etc.) so we must be prepared for either one.
+
+    $log_level = 'warning' if not defined $log_level;
+
+    return Log::Dispatch::Handle->new( name      => 'server',
+                                       handle    => $output_handle,
+                                       min_level => $log_level,
+                                       callback  => $cb,
+                                       newline   => 1, );
+}
+
 
 #-------------------------------------------------------------------------------
 

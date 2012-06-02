@@ -14,6 +14,8 @@ The path to the root directory of your Pinto repository.  The
 repository must already exist at this location.  This attribute is
 required.
 
+## pinto
+
 ## auth
 
 The hashref of authentication options, if authentication is to be used within
@@ -21,7 +23,7 @@ the server. One of the options must be 'backend', to specify which
 Authen::Simple:: class to use; the other key/value pairs will be passed as-is
 to the Authen::Simple class.
 
-## handler
+## router
 
 An object that does the [Pinto::Server::Handler](http://search.cpan.org/perldoc?Pinto::Server::Handler) role.  This object
 will do the work of processing the request and returning a response.
