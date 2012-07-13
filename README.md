@@ -14,8 +14,6 @@ The path to the root directory of your Pinto repository.  The
 repository must already exist at this location.  This attribute is
 required.
 
-## pinto
-
 ## auth
 
 The hashref of authentication options, if authentication is to be used within
@@ -28,7 +26,7 @@ to the Authen::Simple class.
 An object that does the [Pinto::Server::Handler](http://search.cpan.org/perldoc?Pinto::Server::Handler) role.  This object
 will do the work of processing the request and returning a response.
 
-## default_port
+## default\_port
 
 Returns the default port number that the server will listen on.  This
 is a class attribute.

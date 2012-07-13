@@ -8,8 +8,6 @@ use Scalar::Util;
 use Plack::Request;
 use Router::Simple;
 
-use Pinto;
-
 #-------------------------------------------------------------------------------
 
 # VERSION
@@ -49,14 +47,11 @@ sub route {
     my $p = $self->route_handler->match($env)
       or return [404, [], ['Not Found']];
 
-    my $pinto = eval { Pinto->new(root => $root) }
-      or return [500, [], [$@]];
-
     my $responder_class = 'Pinto::Server::Responder::' . $p->{responder};
     Class::Load::load_class($responder_class);
 
     my $request   = Plack::Request->new($env);
-    my $responder = $responder_class->new(request => $request, pinto => $pinto);
+    my $responder = $responder_class->new(request => $request, root => $root);
 
     return $responder->respond;
 };

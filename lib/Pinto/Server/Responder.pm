@@ -6,6 +6,8 @@ use Moose;
 
 use Carp;
 
+use Pinto::Types qw(Dir);
+
 #-------------------------------------------------------------------------------
 
 # VERSION
@@ -19,9 +21,9 @@ has request => (
 );
 
 
-has pinto => (
+has root => (
     is       => 'ro',
-    isa      => 'Pinto',
+    isa      => Dir,
     required => 1,
 );
 

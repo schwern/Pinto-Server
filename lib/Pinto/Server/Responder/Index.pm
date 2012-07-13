@@ -8,6 +8,8 @@ use File::Temp;
 use Path::Class;
 use Plack::Response;
 
+use Pinto;
+
 #-------------------------------------------------------------------------------
 
 # VERSION
@@ -26,9 +28,10 @@ sub respond {
 
     my $temp_handle = File::Temp->new;
     my $temp_file   = file($temp_handle->filename);
-    my $stack       = $self->pinto->repos->get_stack(name => $stk_name);
+    my $pinto       = Pinto->new(root => $self->root);
+    my $stack       = $pinto->repos->get_stack(name => $stk_name);
 
-    $self->pinto->repos->write_index(stack => $stack, file  => $temp_file);
+    $pinto->repos->write_index(stack => $stack, file  => $temp_file);
 
     my $response = Plack::Response->new;
     $response->content_type('application/x-gzip');

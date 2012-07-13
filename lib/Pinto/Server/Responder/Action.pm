@@ -15,6 +15,7 @@ use Plack::Response;
 use Log::Dispatch::Handle;
 use IO::Handle::Util qw(io_from_getline);
 
+use Pinto;
 use Pinto::Result;
 use Pinto::Constants qw(:all);
 
@@ -35,7 +36,8 @@ sub respond {
     my (undef, undef, $action_name) = split '/', $self->request->path_info;
 
     my %params      = %{ $self->request->parameters }; # Copying
-    my $action_args = $params{args} ? decode_json( $params{args} ) : {};
+    my $pinto_args  = $params{pinto_args}  ? decode_json( $params{pinto_args} ) : {};
+    my $action_args = $params{action_args} ? decode_json( $params{action_args} ) : {};
 
     for my $upload_name ( $self->request->uploads->keys ) {
         my $upload    = $self->request->uploads->{$upload_name};
@@ -45,13 +47,13 @@ sub respond {
         $action_args->{$upload_name} = $localfile;
     }
 
-    return $self->_run_action($action_name => $action_args);
+    return $self->_run_action($pinto_args, $action_name, $action_args);
 }
 
 #------------------------------------------------------------------------------
 
 sub _run_action {
-    my ($self, $action_name, $action_args) = @_;
+    my ($self, $pinto_args, $action_name, $action_args) = @_;
 
     my $response;
     my $pipe = IO::Pipe->new;
@@ -62,12 +64,12 @@ sub _run_action {
             $action_args->{out} ||= $writer;
 
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
-
-            my $logger = $self->_make_logger($action_args->{log_level}, $writer);
-            $self->pinto->add_logger($logger);
+            my $pinto = Pinto->new(%{$pinto_args}, root => $self->root);
+            my $logger = $self->_make_logger($pinto_args->{log_level}, $writer);
+            $pinto->add_logger($logger);
 
             my $result =
-                try   { $self->pinto->run(ucfirst $action_name => %{ $action_args }) }
+                try   { $DB::single = 1; $pinto->run(ucfirst $action_name => %{ $action_args }) }
                 catch { print { $writer } $_; Pinto::Result->new->failed };
 
             print { $writer } "$PINTO_SERVER_RESPONSE_EPILOGUE\n" if $result->was_successful;

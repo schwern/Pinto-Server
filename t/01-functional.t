@@ -32,6 +32,7 @@ test_psgi
         my $req = GET('init/modules/02packages.details.txt.gz');
         my $res = $cb->($req);
 
+        $DB::single =1;
         is $res->code, 200, 'Correct status code';
 
         is $res->header('Content-Type'), 'application/x-gzip',
@@ -56,7 +57,7 @@ test_psgi
         my $cb  = shift;
         my $archive = file($FindBin::Bin, qw(data TestDist-1.0.tar.gz))->stringify;
         my $params  = {author => 'THEBARD', norecurse => 1, archives => [$archive]};
-        my $req     = POST( 'action/add', Content => {args => encode_json($params)} );
+        my $req     = POST( 'action/add', Content => {action_args => encode_json($params)} );
         my $res     = $cb->($req);
         is $res->code, 200, 'Correct status code';
 
@@ -119,7 +120,7 @@ test_psgi
     client => sub {
         my $cb  = shift;
         my $params = {};
-        my $req    = POST('action/list', Content => {args => encode_json($params)});
+        my $req    = POST('action/list', Content => {action_args => encode_json($params)});
         my $res    = $cb->($req);
 
         is   $res->code, 200, 'Correct status code';
@@ -154,7 +155,7 @@ test_psgi
     client => sub {
         my $cb = shift;
         my $params = {};
-        my $req    = POST('action/bogus', Content => {args => encode_json($params)});
+        my $req    = POST('action/bogus', Content => {action_args => encode_json($params)});
         my $res    = $cb->($req);
 
         my $content = $res->content;
