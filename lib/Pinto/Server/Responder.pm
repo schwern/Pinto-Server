@@ -29,6 +29,14 @@ has root => (
 
 #-------------------------------------------------------------------------------
 
+=method respond( $request )
+
+Given a L<Plack::Request>, responds with the appropriate
+PSGI-compatible response.  This is an abstract method.  It is your job
+to implement it in a concrete subclass.
+
+=cut
+
 sub respond { croak 'abstract method' }
 
 #-------------------------------------------------------------------------------
@@ -40,3 +48,9 @@ __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
+
+=pod
+
+=for stopwords responders
+
+=cut
