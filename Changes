@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.042     2012-07-15 01:40:58 America/Los_Angeles
+
     Pinto::Server now supports stacks, and requires Pinto version
     0.0444444444444444444444444444444444444444444444 or newer.  Clients must also use Pinto::Remote version 0.041
     or newer.
