@@ -116,7 +116,7 @@ sub _make_logger {
         my %args = @_;
         my $level = uc $args{level};
         chomp (my $msg = $args{message});
-        $msg =~ s{\n}{\n\Q$PINTO_SERVER_RESPONSE_LINE_PREFIX$level: \E}g;
+        $msg =~ s{\n}{\n\Q$PINTO_SERVER_RESPONSE_LINE_PREFIX$level: \E}xg;
         return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n";
     };
 
