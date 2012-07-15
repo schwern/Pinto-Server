@@ -69,7 +69,7 @@ sub _run_action {
             $pinto->add_logger($logger);
 
             my $result =
-                try   { $DB::single = 1; $pinto->run(ucfirst $action_name => %{ $action_args }) }
+                try   { $pinto->run(ucfirst $action_name => %{ $action_args }) }
                 catch { print { $writer } $_; Pinto::Result->new->failed };
 
             print { $writer } "$PINTO_SERVER_RESPONSE_EPILOGUE\n" if $result->was_successful;
