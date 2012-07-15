@@ -51,6 +51,14 @@ sub BUILD {
 
 #-------------------------------------------------------------------------------
 
+=method route( $env, $root )
+
+Given the request environment and the path to the repository root,
+dispatches the request to the appropriate responder and returns the
+response.
+
+=cut
+
 sub route {
     my ($self, $env, $root) = @_;
 
@@ -75,3 +83,11 @@ __PACKAGE__->meta->make_immutable;
 1;
 
 __END__
+
+=pod
+
+=for stopwords responder
+
+=for Pod::Coverage BUILD
+
+=cut
