@@ -26,7 +26,7 @@ sub respond {
     # HACK: The first element of @path_parts could be the start of an
     # actual path, or just a stack name (which we don't need).  We
     # look at it and the following element to decide which it is.
-    if ($path_parts[0] ne 'authors' and $path_parts[1] ne 'id') { pop @path_parts }
+    if ($path_parts[0] ne 'authors' and $path_parts[1] ne 'id') { shift @path_parts }
     my $file = Path::Class::file($self->root, @path_parts);
 
     return [404, [], ["File $file not found"]] if not (-e $file and -f $file);
