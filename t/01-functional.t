@@ -32,7 +32,6 @@ test_psgi
         my $req = GET('init/modules/02packages.details.txt.gz');
         my $res = $cb->($req);
 
-        $DB::single =1;
         is $res->code, 200, 'Correct status code';
 
         is $res->header('Content-Type'), 'application/x-gzip',
