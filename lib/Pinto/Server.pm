@@ -3,7 +3,6 @@
 package Pinto::Server;
 
 use Moose;
-use MooseX::NonMoose;
 use MooseX::ClassAttribute;
 use MooseX::Types::Moose qw(Int HashRef);
 
@@ -21,10 +20,6 @@ use Pinto::Server::Router;
 #-------------------------------------------------------------------------------
 
 # VERSION
-
-#-------------------------------------------------------------------------------
-
-extends qw(Plack::Component);
 
 #-------------------------------------------------------------------------------
 
