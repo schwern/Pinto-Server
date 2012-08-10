@@ -32,7 +32,7 @@ extends qw(Pinto::Server::Responder);
 sub respond {
     my ($self) = @_;
 
-    # path_info always has a leading slash
+    # path_info always has a leading slash, e.g. /action/list
     my (undef, undef, $action_name) = split '/', $self->request->path_info;
 
     my %params      = %{ $self->request->parameters }; # Copying
@@ -85,7 +85,6 @@ sub _run_action {
 
             my $getline   = sub { local $/ = "\n"; $reader->getline };
             my $io_handle = io_from_getline( $getline );
-            my $headers   = ['Content-Type' => 'text/plain'];
 
             # If the parent looses the connection (usually because the
             # client at the other end was killed by Ctrl-C) then we
@@ -94,7 +93,9 @@ sub _run_action {
 
             $response  = sub {
                 my $responder = shift;
+                waitpid $child_pid, 0;
                 local $SIG{PIPE} = sub { kill 2, $child_pid };
+                my $headers = ['Content-Type' => 'text/plain'];
                 return $responder->( [200, $headers, $io_handle] );
             };
         }
