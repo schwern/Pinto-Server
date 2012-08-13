@@ -5,7 +5,10 @@ package Pinto::Server::Tester;
 use Moose;
 use IPC::Run;
 use Test::TCP;
-use Path::Class;
+use File::Which;
+use Carp;
+
+use Pinto::Types qw(File);
 
 #-------------------------------------------------------------------------------
 
@@ -48,6 +51,13 @@ has server_url => (
 );
 
 
+has pintod_exe => (
+  is         => 'ro',
+  isa        => File,
+  default    => sub { which('pintod') || croak "Could not find pintod in PATH" },
+  coerce     => 1,
+);
+
 #-------------------------------------------------------------------------------
 
 sub start_server {
@@ -59,18 +69,17 @@ sub start_server {
   local $ENV{PLACK_ENV}    = 'testing';  # Suppresses startup message
 
   my $server_pid = fork;
-  die "Failed to fork: $!" if not defined $server_pid;
+  croak "Failed to fork: $!" if not defined $server_pid;
 
   if ($server_pid == 0) {
-    my $pintod = file( qw(bin pintod) );
     my %opts = ('--port' => $self->server_port, '--root' => $self->root);
-    my @cmd = ($^X, $pintod->stringify, %opts);
+    my @cmd = ($^X, $self->pintod_exe, %opts);
     $self->tb->note(sprintf 'exec(%s)', join ' ', @cmd);
     exec @cmd;
   }
 
   $self->server_pid($server_pid);
-  $self->server_running_ok or die 'Sever startup failed';
+  $self->server_running_ok or croak 'Sever startup failed';
   sleep 3; # Let the server warm up
 
 
