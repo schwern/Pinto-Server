@@ -103,8 +103,9 @@ sub start_server {
 
   carp 'Server already started' and return if $self->server_pid;
 
-  local $ENV{PLACK_SERVER} = '';         # Use the default backend
-  local $ENV{PLACK_ENV}    = 'testing';  # Suppresses startup message
+  local $ENV{PLACK_SERVER} = '';          # Use the default backend
+  local $ENV{PLACK_ENV}    = 'testing';   # Suppresses startup message
+  local $ENV{PINTO_LOCKFILE_TIMEOUT} = 2; # Don't make tests wait!
 
   my $server_pid = fork;
   croak "Failed to fork: $!" if not defined $server_pid;
