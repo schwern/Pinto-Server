@@ -5,6 +5,7 @@ package Pinto::Server::Responder::Action;
 use Moose;
 
 use JSON;
+use POSIX;
 use IO::Pipe;
 use Try::Tiny;
 use File::Temp;
@@ -96,7 +97,7 @@ sub _run_action {
 
             $response  = sub {
                 my $responder = shift;
-                waitpid $child_pid, 0;
+                waitpid $child_pid, WNOHANG;
                 local $SIG{PIPE} = sub { kill 2, $child_pid };
                 my $headers = ['Content-Type' => 'text/plain'];
                 return $responder->( [200, $headers, $io_handle] );
