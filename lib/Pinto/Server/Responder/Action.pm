@@ -59,7 +59,9 @@ sub _run_action {
     my $pipe = IO::Pipe->new;
 
     run_fork {
+
         child {
+
             my $writer = $pipe->writer;
             $action_args->{out} ||= $writer;
 
@@ -76,6 +78,7 @@ sub _run_action {
             exit $result->was_successful ? 0 : 1;
         }
         parent {
+
             my $child_pid = shift;
             my $reader    = $pipe->reader;
 
@@ -98,6 +101,10 @@ sub _run_action {
                 my $headers = ['Content-Type' => 'text/plain'];
                 return $responder->( [200, $headers, $io_handle] );
             };
+        }
+        error {
+
+            die "Failed to fork: $!";
         }
     };
 
