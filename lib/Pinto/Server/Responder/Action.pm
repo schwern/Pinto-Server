@@ -5,7 +5,6 @@ package Pinto::Server::Responder::Action;
 use Moose;
 
 use JSON;
-use POSIX;
 use IO::Pipe;
 use Try::Tiny;
 use File::Temp;
@@ -15,6 +14,7 @@ use Path::Class;
 use Plack::Response;
 use Log::Dispatch::Handle;
 use IO::Handle::Util qw(io_from_getline);
+use POSIX qw(WNOHANG);
 
 use Pinto;
 use Pinto::Result;
