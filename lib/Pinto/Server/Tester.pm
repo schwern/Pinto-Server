@@ -119,7 +119,7 @@ sub start_server {
 
   $self->server_pid($server_pid);
   $self->server_running_ok or croak 'Sever startup failed';
-  sleep 3; # Let the server warm up
+  sleep 2; # Let the server warm up
 
 
   return $self;
