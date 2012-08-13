@@ -4,6 +4,7 @@ package Pinto::Server::Responder::Action;
 
 use Moose;
 
+use Carp;
 use JSON;
 use IO::Pipe;
 use Try::Tiny;
@@ -105,7 +106,7 @@ sub _run_action {
         }
         error {
 
-            die "Failed to fork: $!";
+            croak "Failed to fork: $!";
         }
     };
 

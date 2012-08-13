@@ -85,6 +85,12 @@ class_has default_port => (
 
 #-------------------------------------------------------------------------------
 
+=method to_app()
+
+Returns the application as a subroutine reference.
+
+=cut
+
 sub to_app {
     my ($self) = @_;
 
@@ -107,6 +113,13 @@ sub to_app {
 }
 
 #-------------------------------------------------------------------------------
+
+=method call( $env )
+
+Invokes the application with the specified environment.  Returns a
+PSGI-compatible response.
+
+=cut
 
 sub call {
     my ($self, $env) = @_;
