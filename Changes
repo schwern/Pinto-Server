@@ -1,9 +1,12 @@
 {{$NEXT}}
 
+    Added a Pinto::Server::Tester which is useful for testing
+    a repository using a live server.
+
 0.042     2012-07-15 01:40:58 America/Los_Angeles
 
     Pinto::Server now supports stacks, and requires Pinto version
-    0.0444444444444444444444444444444444444444444444 or newer.  Clients must also use Pinto::Remote version 0.041
+    0.044 or newer.  Clients must also use Pinto::Remote version 0.041
     or newer.
 
     The "pinto-server" command has been renamed to "pintod".
