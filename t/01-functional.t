@@ -7,7 +7,6 @@ use Test::More;
 use Plack::Test;
 
 use JSON;
-use FindBin;
 use Path::Class;
 use PerlIO::gzip;
 use HTTP::Request::Common;
