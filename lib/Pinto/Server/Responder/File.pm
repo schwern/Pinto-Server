@@ -29,6 +29,9 @@ sub respond {
     # Anything else is a stack name that can be discarded.
     shift @path_parts if $path_parts[0] !~ m{^ (?:authors|modules) $}x;
 
+    # TODO: If a stack is specified, then check that the stack
+    # actually exists.  If not then return an error.
+
     my $file = Path::Class::file($self->root, @path_parts);
 
     return [404, [], ["File $file not found"]] if not (-e $file and -f $file);
