@@ -38,12 +38,20 @@ sub BUILD {
   $r->connect( '/modules/02packages.details.txt.gz',
                {responder => 'File' }, {method => 'GET' } );
 
+  # Route for 03modlist.data.gz (same for all stacks)
+  $r->connect( '/{stack}/modules/03modlist.data.gz',
+               {responder => 'File' }, {method => 'GET' } );
+
+  # Route for 03modlist.data.gz (same for unamed stack)
+  $r->connect( '/modules/03modlist.data.gz',
+               {responder => 'File' }, {method => 'GET' } );
+
   # Route for distributions on the named stack
-  $r->connect( '/{stack}/authors/id/*',
+  $r->connect( '/{stack}/authors/*',
                {responder => 'File'  }, {method => 'GET' } );
 
   # Route for distributions on the default (unamed) stack
-  $r->connect( '/authors/id/*',
+  $r->connect( '/authors/*',
                {responder => 'File'  }, {method => 'GET' } );
 
   return $self;
