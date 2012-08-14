@@ -23,10 +23,12 @@ sub respond {
 
     my (undef, @path_parts) = split '/', $self->request->path_info;
 
-    # HACK: The first element of @path_parts could be the start of an
+    # HACK: The first element of @path_parts could be part of an
     # actual path, or just a stack name (which we don't need).  We
-    # look at it and the following element to decide which it is.
-    if ($path_parts[0] ne 'authors' and $path_parts[1] ne 'id') { shift @path_parts }
+    # will assume that 'authors' and 'modules' are actual paths.
+    # Anything else is a stack name that can be discarded.
+    shift @path_parts if $path_parts[0] !~ m{^ (?:authors|modules) $}x;
+
     my $file = Path::Class::file($self->root, @path_parts);
 
     return [404, [], ["File $file not found"]] if not (-e $file and -f $file);
