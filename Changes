@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.048     2012-08-14 16:18:08 America/Los_Angeles
+
      Was not serving the 03modlist.data.gz and 01mailrc.txt.gz
      files.  These are required by the old cpan[1] client.
      
