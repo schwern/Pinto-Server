@@ -1,4 +1,4 @@
-# ABSTRACT: Responder for Actions
+
 
 package Pinto::Server::Responder::Action;
 
@@ -82,7 +82,6 @@ sub _run_action {
                 try   { $pinto->run(ucfirst $action_name => %{ $action_args }) }
                 catch { print { $writer } $_; Pinto::Result->new->failed };
 
-            $DB::single = 1;
             print { $writer } "$PINTO_SERVER_RESPONSE_EPILOGUE\n" if $result->was_successful;
             exit $result->was_successful ? 0 : 1;
         }
