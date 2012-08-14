@@ -1,4 +1,4 @@
-
+# ABSTRACT: Responder for action requests
 
 package Pinto::Server::Responder::Action;
 
@@ -97,8 +97,10 @@ sub _run_action {
             # tricky because we return a callback, which might not
             # always be in the callback when we get the signal.
 
+            ## no critic qw(RequireLocalizedPunctuationVars)
             $SIG{PIPE} = sub { kill 'TERM', $child_pid };
             $SIG{CHLD} = 'IGNORE';
+            ## use critic
 
             # In Plack::Util::foreach(), input is buffered at 65536
             # bytes. We want to buffer each line only.  So we make our
