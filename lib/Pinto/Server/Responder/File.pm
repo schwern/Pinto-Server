@@ -6,7 +6,7 @@ use Moose;
 
 use Path::Class;
 use Plack::Response;
-use Plack::Mime;
+use Plack::MIME;
 
 #-------------------------------------------------------------------------------
 
