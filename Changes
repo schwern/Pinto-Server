@@ -4,6 +4,8 @@
      when it was requested without an explicit stack name
      in the request URL.
 
+     Improved signal handling and tempfile cleanup.
+
 0.046     2012-08-13 17:23:25 America/Los_Angeles
 
     Added a Pinto::Server::Tester which is useful for testing
