@@ -31,6 +31,17 @@ will do the work of processing the request and returning a response.
 Returns the default port number that the server will listen on.  This
 is a class attribute.
 
+# METHODS
+
+## to\_app()
+
+Returns the application as a subroutine reference.
+
+## call( $env )
+
+Invokes the application with the specified environment.  Returns a
+PSGI-compatible response.
+
 There is nothing to see here.
 
 Look at [pintod](http://search.cpan.org/perldoc?pintod) if you want to start the server.
