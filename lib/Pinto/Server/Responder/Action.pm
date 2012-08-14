@@ -67,6 +67,12 @@ sub _run_action {
             my $writer = $pipe->writer;
             $action_args->{out} ||= $writer;
 
+            # I'm not sure why, but cleanup isn't happening when we get
+            # a TERM signal from the parent process.  I suspect it
+            # has something to do with File::NFSLock messing with %SIG
+
+            local $SIG{TERM} = sub { File::Temp::cleanup; exit };
+
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
             my $pinto = Pinto->new(%{$pinto_args}, root => $self->root);
             my $logger = $self->_make_logger($pinto_args->{log_level}, $writer);
@@ -76,6 +82,7 @@ sub _run_action {
                 try   { $pinto->run(ucfirst $action_name => %{ $action_args }) }
                 catch { print { $writer } $_; Pinto::Result->new->failed };
 
+            $DB::single = 1;
             print { $writer } "$PINTO_SERVER_RESPONSE_EPILOGUE\n" if $result->was_successful;
             exit $result->was_successful ? 0 : 1;
         }
@@ -84,6 +91,16 @@ sub _run_action {
             my $child_pid = shift;
             my $reader    = $pipe->reader;
 
+            # If the client aborts (usually by hitting Ctrl-C) then we
+            # get a PIPE signal.  That is our cue to stop the Action
+            # by killing the child.  TODO: Find a way to set these
+            # signal handlers locally, rather than globally.  This is
+            # tricky because we return a callback, which might not
+            # always be in the callback when we get the signal.
+
+            $SIG{PIPE} = sub { kill 'TERM', $child_pid };
+            $SIG{CHLD} = 'IGNORE';
+
             # In Plack::Util::foreach(), input is buffered at 65536
             # bytes. We want to buffer each line only.  So we make our
             # own input handle with $/ set accordingly.
@@ -91,15 +108,8 @@ sub _run_action {
             my $getline   = sub { local $/ = "\n"; $reader->getline };
             my $io_handle = io_from_getline( $getline );
 
-            # If the parent looses the connection (usually because the
-            # client at the other end was killed by Ctrl-C) then we
-            # will get a SIGPIPE.  At that point, we need to kill the
-            # child.  Not sure if parent should die too.
-
             $response  = sub {
                 my $responder = shift;
-                waitpid $child_pid, WNOHANG;
-                local $SIG{PIPE} = sub { kill 2, $child_pid };
                 my $headers = ['Content-Type' => 'text/plain'];
                 return $responder->( [200, $headers, $io_handle] );
             };
