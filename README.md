@@ -4,7 +4,7 @@ Pinto::Server - Web interface to a Pinto repository
 
 # VERSION
 
-version 0.047
+version 0.048
 
 # ATTRIBUTES
 
