@@ -138,7 +138,7 @@ sub _make_logger {
         my $level = uc $args{level};
         chomp (my $msg = $args{message});
         $msg =~ s{\n}{\n\Q$PINTO_SERVER_RESPONSE_LINE_PREFIX$level: \E}xg;
-        return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg" . "\n";
+        return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg";
     };
 
 
@@ -150,7 +150,7 @@ sub _make_logger {
     return Log::Dispatch::Handle->new( name      => 'server',
                                        handle    => $output_handle,
                                        min_level => $log_level,
-                                       callback  => $cb,
+                                       callbacks => $cb,
                                        newline   => 1, );
 }
 
