@@ -1,5 +1,7 @@
 {{$NEXT}}
 
+0.049     2012-08-15 14:25:34 America/Los_Angeles
+
      Fixed the logging mechanism so clients can produce
      colorized log messages.
 
