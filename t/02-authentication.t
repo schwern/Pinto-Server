@@ -27,7 +27,7 @@ my $t = Pinto::Tester->new;
 my $temp_dir = File::Temp->newdir;
 my $htpasswd_file = file($temp_dir, 'htpasswd');
 $htpasswd_file->touch(); # Apache::Htpasswd requires the file to exist
-Apache::Htpasswd->new( $htpasswd_file )->htpasswd('my-login', 'my-password');
+Apache::Htpasswd->new( $htpasswd_file )->htpasswd('my_login', 'my_password');
 
 ok( -e $htpasswd_file, 'htpasswd file exists' );
 ok( -s $htpasswd_file, 'htpasswd file is not empty' );
@@ -58,7 +58,7 @@ test_psgi
     client => sub {
         my $cb  = shift;
         my $req = HTTP::Request->new(POST => "/action/list");
-        $req->authorization_basic('my-login', 'my-password');
+        $req->authorization_basic('my_login', 'my_password');
         my $res = $cb->($req);
 
         ok $res->is_success, 'Request with correct password succeeded';
@@ -72,7 +72,7 @@ test_psgi
     client => sub {
         my $cb  = shift;
         my $req = HTTP::Request->new(POST => "/action/list");
-        $req->authorization_basic('my-login', 'my-bogus-password');
+        $req->authorization_basic('my_login', 'my_bogus_password');
         my $res = $cb->($req);
 
         ok ! $res->is_success, 'Request with invalid password failed';
