@@ -1,5 +1,11 @@
 {{$NEXT}}
 
+     Now requires Pinto-0.052, which stores the index for
+     each stack in a static file.  This makes the server much
+     simpler and faster.  But beware that repositories created
+     with older versions of Pinto are not compatible.  Contact
+     thaljef@cpan.org if you need a migration path.
+
 0.049     2012-08-15 14:25:34 America/Los_Angeles
 
      Fixed the logging mechanism so clients can produce
