@@ -58,6 +58,13 @@ sub route {
     my $request   = Plack::Request->new($env);
     my $responder = $responder_class->new(request => $request, root => $root);
 
+    # HACK: Plack-1.02 calls URI::Escape::uri_escape() with arguments
+    # that inadvertently cause $_ to be compiled into a regex.  This
+    # will emit warning if $_ is undef, or may blow up if it contains
+    # certains stuff.  To avoid this, just make sure $_ is empty for
+    # now.  A patch has been sent to Miyagawa.
+    local $_ = '';
+
     return $responder->respond;
 };
 
