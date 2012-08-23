@@ -24,10 +24,13 @@ my $t = Pinto::Tester->new;
 #------------------------------------------------------------------------------
 # Create a password file
 
-my $temp_dir = File::Temp->newdir;
-my $htpasswd_file = file($temp_dir, 'htpasswd');
+my $temp_dir         = File::Temp->newdir;
+my $htpasswd_file    = file($temp_dir, 'htpasswd');
+my @credentials      = qw(my_login my_password);
+my $auth_required_rx = qr/authorization required/i;
+
 $htpasswd_file->touch(); # Apache::Htpasswd requires the file to exist
-Apache::Htpasswd->new( $htpasswd_file )->htpasswd('my_login', 'my_password');
+Apache::Htpasswd->new( $htpasswd_file )->htpasswd(@credentials);
 
 ok( -e $htpasswd_file, 'htpasswd file exists' );
 ok( -s $htpasswd_file, 'htpasswd file is not empty' );
@@ -46,40 +49,64 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $req = HTTP::Request->new(POST => "/action/list");
-        my $res = $cb->($req);
 
-        ok !$res->is_success, 'Request without authentication failed';
-        like $res->content, qr/authorization required/i, 'Expected content';
+        my $post_req = HTTP::Request->new(POST => "/action/list");
+        my $post_res = $cb->($post_req);
+
+        ok !$post_res->is_success, 'POST request without authentication failed';
+        like $post_res->content, $auth_required_rx, 'Expected content';
+
+        my $get_req = HTTP::Request->new(GET => "/init/modules/02packages.details.txt.gz");
+        my $get_res = $cb->($get_req);
+
+        ok !$get_res->is_success, 'GET request without authentication failed';
+        like $get_res->content, $auth_required_rx, 'Expected content';
+
     };
 
 test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $req = HTTP::Request->new(POST => "/action/list");
-        $req->authorization_basic('my_login', 'my_password');
-        my $res = $cb->($req);
 
-        ok $res->is_success, 'Request with correct password succeeded';
+        my $post_req = HTTP::Request->new(POST => "/action/list");
+        $post_req->authorization_basic(@credentials);
+        my $post_res = $cb->($post_req);
 
-        like $res->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$},
-            'Got epilogue';
+        ok $post_res->is_success, 'POST request with correct password succeeded';
+        like $post_res->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$}, 'Got epilogue';
+
+        my $get_req = HTTP::Request->new(GET => "/init/modules/02packages.details.txt.gz");
+        $get_req->authorization_basic(@credentials);
+        my $get_res = $cb->($get_req);
+
+        ok $get_res->is_success, 'POST request with correct password succeeded';
+        # TODO: maybe test headers, body.
     };
+
 
 test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $req = HTTP::Request->new(POST => "/action/list");
-        $req->authorization_basic('my_login', 'my_bogus_password');
-        my $res = $cb->($req);
 
-        ok ! $res->is_success, 'Request with invalid password failed';
-        like $res->content, qr/authorization required/i, 'Expected content';
+        my @bad_credentials = qw(my_login my_bogus_password);
+
+        my $post_req = HTTP::Request->new(POST => "/action/list");
+        $post_req->authorization_basic(@bad_credentials);
+        my $post_res = $cb->($post_req);
+
+        ok ! $post_res->is_success, 'POST request with invalid password failed';
+        like $post_res->content, $auth_required_rx, 'Expected content';
+
+        my $get_req = HTTP::Request->new(GET => "/init/modules/02packages.details.txt.gz");
+        $get_req->authorization_basic(@bad_credentials);
+        my $get_res = $cb->($get_req);
+
+        ok !$get_res->is_success, 'GET request without authentication failed';
+        like $get_res->content, $auth_required_rx, 'Expected content';
     };
-
 
 #------------------------------------------------------------------------------
 
-done_testing();
+done_testing;
