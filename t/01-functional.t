@@ -24,32 +24,7 @@ my %opts = (root => $t->pinto->root);
 my $app  = Pinto::Server->new(%opts)->to_app;
 
 #------------------------------------------------------------------------------
-# Fetching default index...
-
-test_psgi
-    app => $app,
-    client => sub {
-        my $cb  = shift;
-        my $req = GET('modules/02packages.details.txt.gz');
-        my $res = $cb->($req);
-
-        is $res->code, 200, 'Correct status code';
-
-        is $res->header('Content-Type'), 'application/x-gzip',
-            'Correct Type header';
-
-        cmp_ok $res->header('Content-Length'), '>=', 200,
-            'Reasonable Length header'; # Actual length may vary
-
-        cmp_ok $res->header('Content-Length'), '<', 400,
-            'Reasonable Length header'; # Actual length may vary
-
-        is $res->header('Content-Length'), length $res->content,
-            'Length header matches actual length';
-    };
-
-#------------------------------------------------------------------------------
-# Fetching a named index (i.e. for a specific stack)...
+# Fetching an index...
 
 test_psgi
     app => $app,
@@ -81,18 +56,13 @@ test_psgi
     client => sub {
         my $cb  = shift;
 
-        # Test each path, with and without a stack name in the request
-
-        my @stacks = ('init/', '');
         my @paths  = qw(authors/01mailrc.txt.gz modules/03modlist.data.gz);
 
-        for my $stack (@stacks) {
-          for my $path (@paths) {
-            my $url = $stack . $path;
+        for my $path (@paths) {
+            my $url = "init/$path";
             my $req = GET($url);
             my $res = $cb->($req);
             is $res->code, 200, "Got response for $url";
-          }
         }
     };
 
@@ -126,10 +96,7 @@ test_psgi
     client => sub {
         my $cb  = shift;
 
-        # Try fetching the archive with and without the stack name in the URL
-
-        for ('init/', '') {
-          my $url = $_ . 'authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
+          my $url = 'init/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
           my $req = GET($url);
           my $res = $cb->($req);
 
@@ -166,7 +133,6 @@ test_psgi
         like $res->content, qr{^rl \s+ Bar \s+ 0.8 \s+ \S+ \n}mx,
             'Listing contains the Bar package';
     };
-}
 
 #------------------------------------------------------------------------------
 # Make two stacks, add a different version of a dist to each stack, then fetch
@@ -226,7 +192,6 @@ for my $v (1,2) {
           like $index, qr{^ $_ \s+ $v  \s+ J/JO/JOHN/Fruit-$v.tar.gz $}mx, "index contains package $_-$v";
         }
     };
-
 }
 
 #------------------------------------------------------------------------------

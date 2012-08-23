@@ -30,28 +30,7 @@ sub BUILD {
   $r->connect( '/action/{action}',
                {responder => 'Action'}, {method => 'POST'} );
 
-  # Route for index of the named stack
-  $r->connect( '/{stack}/modules/02packages.details.txt.gz',
-               {responder => 'Index' }, {method => 'GET' } );
-
-  # Route for index of the default (unamed) stack
-  $r->connect( '/modules/02packages.details.txt.gz',
-               {responder => 'File' }, {method => 'GET' } );
-
-  # Route for 03modlist.data.gz (same for all stacks)
-  $r->connect( '/{stack}/modules/03modlist.data.gz',
-               {responder => 'File' }, {method => 'GET' } );
-
-  # Route for 03modlist.data.gz (same for unamed stack)
-  $r->connect( '/modules/03modlist.data.gz',
-               {responder => 'File' }, {method => 'GET' } );
-
-  # Route for distributions on the named stack
-  $r->connect( '/{stack}/authors/*',
-               {responder => 'File'  }, {method => 'GET' } );
-
-  # Route for distributions on the default (unamed) stack
-  $r->connect( '/authors/*',
+  $r->connect( '/*',
                {responder => 'File'  }, {method => 'GET' } );
 
   return $self;
