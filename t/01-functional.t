@@ -79,7 +79,7 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $params  = {author => 'THEBARD', norecurse => 1, archives => [$archive]};
+        my $params  = {author => 'THEBARD', norecurse => 1, message => 'test', archives => [$archive]};
         my $req     = POST( 'action/add', Content => {action_args => encode_json($params)} );
         my $res     = $cb->($req);
         action_response_ok($res);
@@ -147,7 +147,7 @@ for my $v (1,2) {
     app => $app,
     client => sub {
         my $cb     = shift;
-        my $params = {stack => $stack};
+        my $params = {stack => $stack, message => 'test'};
         my $req    = POST('action/new', Content => {action_args => encode_json($params)});
         my $res    = $cb->($req);
 
@@ -159,7 +159,7 @@ for my $v (1,2) {
     app => $app,
     client => sub {
         my $cb      = shift;
-        my $params  = {author => 'JOHN', norecurse => 1, stack => $stack, archives => [$archive]};
+        my $params  = {author => 'JOHN', norecurse => 1, stack => $stack, message => 'test', archives => [$archive]};
         my $req     = POST( 'action/add', Content => {action_args => encode_json($params)} );
         my $res     = $cb->($req);
 
