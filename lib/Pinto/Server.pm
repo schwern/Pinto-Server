@@ -13,7 +13,7 @@ use Scalar::Util qw(blessed);
 use IO::Interactive qw(is_interactive);
 use Plack::Middleware::Auth::Basic;
 
-use Pinto 0.052;
+use Pinto 0.055;
 use Pinto::Types qw(Dir);
 use Pinto::Constants qw($PINTO_SERVER_DEFAULT_PORT);
 use Pinto::Server::Router;
