@@ -31,7 +31,7 @@ sub BUILD {
                {responder => 'Action'}, {method => 'POST'} );
 
   $r->connect( '/*',
-               {responder => 'File'  }, {method => 'GET' } );
+               {responder => 'File'  }, {method => ['GET', 'HEAD'] } );
 
   return $self;
 }
