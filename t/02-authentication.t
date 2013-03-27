@@ -29,7 +29,7 @@ my $htpasswd_file    = file($temp_dir, 'htpasswd');
 my @credentials      = qw(my_login my_password);
 my $auth_required_rx = qr/authorization required/i;
 
-$htpasswd_file->touch(); # Apache::Htpasswd requires the file to exist
+$htpasswd_file->touch; # Apache::Htpasswd requires the file to exist
 Apache::Htpasswd->new( $htpasswd_file )->htpasswd(@credentials);
 
 ok( -e $htpasswd_file, 'htpasswd file exists' );
@@ -40,7 +40,7 @@ ok( -s $htpasswd_file, 'htpasswd file is not empty' );
 
 my $auth = {backend => 'Passwd', path => $htpasswd_file->stringify()};
 my %opts = ( root => $t->pinto->root(), auth => $auth );
-my $app  = Pinto::Server->new(%opts)->to_app();
+my $app  = Pinto::Server->new(%opts)->to_app;
 
 #------------------------------------------------------------------------------
 # Do tests
@@ -76,7 +76,7 @@ test_psgi
         ok $post_res->is_success, 'POST request with correct password succeeded';
         like $post_res->content, qr{$PINTO_SERVER_RESPONSE_EPILOGUE\n$}, 'Got epilogue';
 
-        my $get_req = HTTP::Request->new(GET => "/init/modules/02packages.details.txt.gz");
+        my $get_req = HTTP::Request->new(GET => "modules/02packages.details.txt.gz");
         $get_req->authorization_basic(@credentials);
         my $get_res = $cb->($get_req);
 

@@ -17,9 +17,10 @@ use Log::Dispatch::Handle;
 use IO::Handle::Util qw(io_from_getline);
 use POSIX qw(WNOHANG);
 
-use Pinto;
-use Pinto::Result;
-use Pinto::Constants qw(:all);
+use Pinto 0.066;
+use Pinto::Result 0.066;
+use Pinto::Chrome::Term 0.066;
+use Pinto::Constants qw(:server);
 
 #-------------------------------------------------------------------------------
 
@@ -65,7 +66,6 @@ sub _run_action {
         child {
 
             my $writer = $pipe->writer;
-            $action_args->{out} ||= $writer;
 
             # I'm not sure why, but cleanup isn't happening when we get
             # a TERM signal from the parent process.  I suspect it
@@ -74,9 +74,10 @@ sub _run_action {
             local $SIG{TERM} = sub { File::Temp::cleanup; exit };
 
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
-            my $pinto = Pinto->new(%{$pinto_args}, root => $self->root);
-            my $logger = $self->_make_logger($pinto_args->{log_level}, $writer);
-            $pinto->add_logger($logger);
+
+            my %chrome_args = (%{$pinto_args}, stdout => $writer, stderr => $writer);
+            my $chrome = Pinto::Chrome::Term->new(%chrome_args);
+            my $pinto  = Pinto->new(chrome => $chrome, root => $self->root);
 
             my $result =
                 try   { $pinto->run(ucfirst $action_name => %{ $action_args }) }
@@ -123,37 +124,6 @@ sub _run_action {
 
     return $response;
  }
-
-#-------------------------------------------------------------------------------
-
-sub _make_logger {
-    my ($self, $log_level, $output_handle) = @_;
-
-    # This callback prepends the special token "## LEVEL:" to each log
-    # message, so that clients can distinguish log messages from
-    # regular output, and re-log the message accordingly.
-
-    my $cb = sub {
-        my %args = @_;
-        my $level = uc $args{level};
-        chomp (my $msg = $args{message});
-        $msg =~ s{\n}{\n\Q$PINTO_SERVER_RESPONSE_LINE_PREFIX$level: \E}xg;
-        return $PINTO_SERVER_RESPONSE_LINE_PREFIX . "$level: $msg";
-    };
-
-
-    # The log_level could be a number (0-6) or a string (e.g. debug,
-    # warn, etc.) so we must be prepared for either one.
-
-    $log_level = 'warning' if not defined $log_level;
-
-    return Log::Dispatch::Handle->new( name      => 'server',
-                                       handle    => $output_handle,
-                                       min_level => $log_level,
-                                       callbacks => $cb,
-                                       newline   => 1, );
-}
-
 
 #-------------------------------------------------------------------------------
 

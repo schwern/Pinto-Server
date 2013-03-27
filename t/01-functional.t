@@ -7,8 +7,8 @@ use Test::More;
 use Plack::Test;
 
 use JSON;
+use IO::Zlib;
 use Path::Class;
-use PerlIO::gzip;
 use HTTP::Request::Common;
 
 use Pinto::Server;
@@ -30,7 +30,7 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $req = GET('init/modules/02packages.details.txt.gz');
+        my $req = GET('modules/02packages.details.txt.gz');
         my $res = $cb->($req);
 
         is $res->code, 200, 'Correct status code';
@@ -59,10 +59,12 @@ test_psgi
         my @paths  = qw(authors/01mailrc.txt.gz modules/03modlist.data.gz);
 
         for my $path (@paths) {
-            my $url = "init/$path";
-            my $req = GET($url);
-            my $res = $cb->($req);
-            is $res->code, 200, "Got response for $url";
+          for my $prefix ('stacks/master/', '') {
+              my $url = $prefix . $path;
+              my $req = GET($url);
+              my $res = $cb->($req);
+              is $res->code, 200, "Got response for $url";
+            }
         }
     };
 
@@ -79,24 +81,41 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
-        my $params  = {author => 'THEBARD', norecurse => 1, message => 'test', archives => [$archive]};
+        my $params  = {author => 'THEBARD', no_recurse => 1, message => 'test', archives => [$archive]};
         my $req     = POST( 'action/add', Content => {action_args => encode_json($params)} );
         my $res     = $cb->($req);
         action_response_ok($res);
-
-        #--------------------------------------------
-        # Add it again, and make sure we get an error
-
-        my $res2     = $cb->($req);
-        action_response_not_ok($res2, qr{already exists});
     };
+
+
+  test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $params  = {stack => 'master'};
+        my $req     = POST( 'action/lock', Content => {action_args => encode_json($params)} );
+        my $res     = $cb->($req);
+        action_response_ok($res);
+    };
+
+
+  test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $params  = {author => 'THEBARD', no_recurse => 1, message => 'test', archives => [$archive]};
+        my $req     = POST( 'action/add', Content => {action_args => encode_json($params)} );
+        my $res     = $cb->($req);
+        action_response_not_ok($res, qr{is locked});
+    };
+
 
   test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
 
-          my $url = 'init/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
+          my $url = 'stacks/master/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
           my $req = GET($url);
           my $res = $cb->($req);
 
@@ -127,10 +146,10 @@ test_psgi
         # Note that the lines of the listing itself should NOT contain
         # the $PINTO_SERVER_RESPONSE_LINE_PREFIX in front of each line.
 
-        like $res->content, qr{^rl \s+ Foo \s+ 0.7 \s+ \S+ \n}mx,
+        like $res->content, qr{\s Foo \s+ 0.7 \s+ \S+ \n}mx,
             'Listing contains the Foo package';
 
-        like $res->content, qr{^rl \s+ Bar \s+ 0.8 \s+ \S+ \n}mx,
+        like $res->content, qr{\s Bar \s+ 0.8 \s+ \S+ \n}mx,
             'Listing contains the Bar package';
     };
 
@@ -147,7 +166,7 @@ for my $v (1,2) {
     app => $app,
     client => sub {
         my $cb     = shift;
-        my $params = {stack => $stack, message => 'test'};
+        my $params = {stack => $stack};
         my $req    = POST('action/new', Content => {action_args => encode_json($params)});
         my $res    = $cb->($req);
 
@@ -159,7 +178,7 @@ for my $v (1,2) {
     app => $app,
     client => sub {
         my $cb      = shift;
-        my $params  = {author => 'JOHN', norecurse => 1, stack => $stack, message => 'test', archives => [$archive]};
+        my $params  = {author => 'JOHN', no_recurse => 1, stack => $stack, message => 'test', archives => [$archive]};
         my $req     = POST( 'action/add', Content => {action_args => encode_json($params)} );
         my $res     = $cb->($req);
 
@@ -171,7 +190,7 @@ for my $v (1,2) {
     app => $app,
     client => sub {
         my $cb   = shift;
-        my $req  = GET("$stack/modules/02packages.details.txt.gz");
+        my $req  = GET("stacks/$stack/modules/02packages.details.txt.gz");
         my $res  = $cb->($req);
 
 
@@ -183,8 +202,8 @@ for my $v (1,2) {
         close $temp;
 
         # Slurp index contents into memory
-        open my $fh, '<:gzip', $temp->filename or die $!;
-        my $index = do { local $/ = undef; <$fh> };
+        my $fh = IO::Zlib->new($temp->filename, "rb") or die $!;
+        my $index = join '', <$fh>;
         close $fh;
 
         # Test index contents
@@ -231,7 +250,7 @@ sub action_response_ok {
                                   $response->request->uri;
 
   # Report failues from caller's perspective
-  local $Test::Builder::Level = $Test::Builder::Level + 1;
+  local $Test::Builder::Level = $Test::Builder::Level + 3;
 
   my $type = $response->header('Content-Type');
   is $type, 'text/plain', "Correct Content-Type header for $test_name";
@@ -259,7 +278,7 @@ sub action_response_not_ok {
                                   $response->request->uri;
 
   # Report failues from caller's perspective
-  local $Test::Builder::Level = $Test::Builder::Level + 1;
+  local $Test::Builder::Level = $Test::Builder::Level + 3;
 
   my $type = $response->header('Content-Type');
   is $type, 'text/plain', "Correct Content-Type header for $test_name";
