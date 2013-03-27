@@ -9,6 +9,7 @@ use Plack::Test;
 use JSON;
 use IO::Zlib;
 use Path::Class;
+use HTTP::Date;
 use HTTP::Request::Common;
 
 use Pinto::Server;
@@ -46,6 +47,12 @@ test_psgi
 
         is $res->header('Content-Length'), length $res->content,
             'Length header matches actual length';
+
+        is $res->header('Cache-Control'), 'no-cache',
+            'Got a "Cache-Control: no-cache" header';
+
+        isnt str2time($res->header('Last-Modified')), undef,
+            'Last-Modified header contains a proper HTTP::Date string';
     };
 
 #------------------------------------------------------------------------------
@@ -64,6 +71,7 @@ test_psgi
               my $req = GET($url);
               my $res = $cb->($req);
               is $res->code, 200, "Got response for $url";
+              is $res->header('Cache-Control'), "no-cache", "$url got a 'Cache-Control: no-cache' header";
             }
         }
     };
@@ -114,24 +122,68 @@ test_psgi
     app => $app,
     client => sub {
         my $cb  = shift;
+        my $url = 'stacks/master/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
+        my $req = GET($url);
+        my $res = $cb->($req);
 
-          my $url = 'stacks/master/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
-          my $req = GET($url);
-          my $res = $cb->($req);
+        is $res->code, 200, "Correct status code for GET $url";
 
-          is $res->code, 200, "Correct status code for GET $url";
+        is $res->header('Content-Type'), 'application/x-gzip',
+          "Correct Type header for GET $url";
 
-          is $res->header('Content-Type'), 'application/x-gzip',
-            "Correct Type header for GET $url";
+        is $res->header('Content-Length'), -s $archive,
+          "Length header matches actual archive size for GET $url";
 
-          is $res->header('Content-Length'), -s $archive,
-            "Length header matches actual archive size for GET $url";
-
-          is $res->header('Content-Length'), length $res->content,
-            "Length header matches actual content length for GET $url";
-        }
+        is $res->header('Content-Length'), length $res->content,
+          "Length header matches actual content length for GET $url";
     };
 
+  my $last_modified;
+
+  test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $url = 'stacks/master/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
+        my $req = HEAD($url);
+        my $res = $cb->($req);
+
+        $last_modified = $res->header('Last-Modified');
+
+        isnt str2time($last_modified), undef,
+          "Last-Modified header contains a proper HTTP::Date string for HEAD $url";
+
+        is $res->code, 200, "Correct status code for HEAD $url";
+
+        is $res->header('Content-Type'), 'application/x-gzip',
+          "Correct Type header for HEAD $url";
+
+        is $res->header('Content-Length'), -s $archive,
+          "Length header matches actual archive size for HEAD $url";
+
+        is length $res->content, 0,
+          "No content returned for HEAD $url";
+    };
+
+  test_psgi
+    app => $app,
+    client => sub {
+        my $cb  = shift;
+        my $url = 'stacks/master/authors/id/T/TH/THEBARD/TestDist-1.0.tar.gz';
+        my $req = GET($url, 'If-Modified-Since' => $last_modified);
+        my $res = $cb->($req);
+
+        is $res->code, 304, "Correct status code for unmodified $url";
+
+        is $res->header('Content-Type'), undef,
+          "No Content-Type header for 304 response";
+
+        is $res->header('Content-Length'), undef,
+          "No Content-Length header for 304 response";
+
+        is length $res->content, 0,
+          "No content returned for 304 response";
+    };
 
   test_psgi
     app => $app,
@@ -152,6 +204,7 @@ test_psgi
         like $res->content, qr{\s Bar \s+ 0.8 \s+ \S+ \n}mx,
             'Listing contains the Bar package';
     };
+}
 
 #------------------------------------------------------------------------------
 # Make two stacks, add a different version of a dist to each stack, then fetch
@@ -224,6 +277,8 @@ test_psgi
         my $res = $cb->($req);
 
         is   $res->code, 404, 'Correct status code';
+        is   $res->header('Content-Type'), 'text/plain';
+        is   $res->header('Content-Length'), length $res->content;
         like $res->content, qr{not found}i, 'File not found message';
     };
 
