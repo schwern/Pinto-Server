@@ -19,6 +19,7 @@ use POSIX qw(WNOHANG);
 
 use Pinto 0.066;
 use Pinto::Result 0.066;
+use Pinto::Constants 0.066;
 use Pinto::Chrome::Term 0.066;
 use Pinto::Constants qw(:server);
 
@@ -70,8 +71,12 @@ sub _run_action {
             # I'm not sure why, but cleanup isn't happening when we get
             # a TERM signal from the parent process.  I suspect it
             # has something to do with File::NFSLock messing with %SIG
-
             local $SIG{TERM} = sub { File::Temp::cleanup; exit };
+
+            # We don't yet have a way to interactively compose the commit
+            # message over the wire.  So we just pretend that we are not
+            # interactive so Pinto will use the given (or default) message.
+            local $Pinto::Globals::is_interactive = 0;
 
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
