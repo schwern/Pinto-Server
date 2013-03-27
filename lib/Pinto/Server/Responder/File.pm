@@ -42,15 +42,39 @@ sub respond {
     $response->content_length( $stat[7] );
     $response->header( 'Last-Modified' => HTTP::Date::time2str($stat[9]) );
 
-    # force caches to always revalidate the package indices, i.e.
-    # 01mailrc.txt.gz, 2packages.details.txt.gz, 03modlist.data.gz
-    $response->header( 'Cache-Control' => 'no-cache' ) if $file =~ m[/\d\d[^/]+\.gz$];
+    $response->header( 'Cache-Control' => 'no-cache' ) if $self->should_not_cache($file);
 
     $response->body( $file->openr ) unless $self->request->method eq "HEAD";
     $response->status( 200 );
 
     return $response;
  }
+
+#-------------------------------------------------------------------------------
+
+=method should_not_cache($file)
+
+Returns true if the file should not be cached, and therefore the Cache-Control
+header should be set to 'no-cache' in the response.  Currently, only the index
+files should not be cached.
+
+=cut
+
+#-------------------------------------------------------------------------------
+
+sub should_not_cache {
+    my ($self, $file);
+
+    # force caches to always revalidate the indices, i.e.
+    # 01mailrc.txt.gz, 02packages.details.txt.gz, 03modlist.data.gz
+
+    my $basename = $file->basename;
+
+    return 1 if $basename eq '01mailrc.txt.gz';
+    return 1 if $basename eq '02packages.details.txt.gz';
+    return 1 if $basename eq '03modlist.data.gz';
+    return 0;
+}
 
 #-------------------------------------------------------------------------------
 

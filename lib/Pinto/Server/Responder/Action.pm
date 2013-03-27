@@ -76,7 +76,7 @@ sub _run_action {
             # We don't yet have a way to interactively compose the commit
             # message over the wire.  So we just pretend that we are not
             # interactive so Pinto will use the given (or default) message.
-            local $Pinto::Globals::is_interactive = 0;
+            local $Pinto::Globals::is_interactive = 0;  ## no critic qw(PackageVar)
 
             print { $writer } "$PINTO_SERVER_RESPONSE_PROLOGUE\n";
 
