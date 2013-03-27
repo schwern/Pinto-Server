@@ -4,7 +4,7 @@ Pinto::Server - Web interface to a Pinto repository
 
 # VERSION
 
-version 0.50
+version 0.050
 
 # ATTRIBUTES
 
@@ -61,33 +61,33 @@ in addition to those websites please use your favorite search engine to discover
 
 - Search CPAN
 
-The default CPAN search engine, useful to view POD in HTML format.
+    The default CPAN search engine, useful to view POD in HTML format.
 
-[http://search.cpan.org/dist/Pinto-Server](http://search.cpan.org/dist/Pinto-Server)
+    [http://search.cpan.org/dist/Pinto-Server](http://search.cpan.org/dist/Pinto-Server)
 
 - CPAN Ratings
 
-The CPAN Ratings is a website that allows community ratings and reviews of Perl modules.
+    The CPAN Ratings is a website that allows community ratings and reviews of Perl modules.
 
-[http://cpanratings.perl.org/d/Pinto-Server](http://cpanratings.perl.org/d/Pinto-Server)
+    [http://cpanratings.perl.org/d/Pinto-Server](http://cpanratings.perl.org/d/Pinto-Server)
 
 - CPAN Testers
 
-The CPAN Testers is a network of smokers who run automated tests on uploaded CPAN distributions.
+    The CPAN Testers is a network of smokers who run automated tests on uploaded CPAN distributions.
 
-[http://www.cpantesters.org/distro/P/Pinto-Server](http://www.cpantesters.org/distro/P/Pinto-Server)
+    [http://www.cpantesters.org/distro/P/Pinto-Server](http://www.cpantesters.org/distro/P/Pinto-Server)
 
 - CPAN Testers Matrix
 
-The CPAN Testers Matrix is a website that provides a visual overview of the test results for a distribution on various Perls/platforms.
+    The CPAN Testers Matrix is a website that provides a visual overview of the test results for a distribution on various Perls/platforms.
 
-[http://matrix.cpantesters.org/?dist=Pinto-Server](http://matrix.cpantesters.org/?dist=Pinto-Server)
+    [http://matrix.cpantesters.org/?dist=Pinto-Server](http://matrix.cpantesters.org/?dist=Pinto-Server)
 
 - CPAN Testers Dependencies
 
-The CPAN Testers Dependencies is a website that shows a chart of the test results of all dependencies for a distribution.
+    The CPAN Testers Dependencies is a website that shows a chart of the test results of all dependencies for a distribution.
 
-[http://deps.cpantesters.org/?module=Pinto::Server](http://deps.cpantesters.org/?module=Pinto::Server)
+    [http://deps.cpantesters.org/?module=Pinto::Server](http://deps.cpantesters.org/?module=Pinto::Server)
 
 ## Bugs / Feature Requests
 
